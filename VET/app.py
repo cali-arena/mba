@@ -118,8 +118,8 @@ except Exception as e:
 if df_real is not None and len(df_real) > 0:
     # SEMPRE definir os dados no session state
     st.session_state.df_main = df_real
-            st.session_state.dataset_carregado_auto = True
-            st.session_state.dataset_sempre_carregado = True
+    st.session_state.dataset_carregado_auto = True
+    st.session_state.dataset_sempre_carregado = True
     st.session_state.dados_prontos = True
     st.session_state.dataset_source = dataset_source
     
