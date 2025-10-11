@@ -58,8 +58,6 @@ def carregar_dataset_completo():
         csv_files = list(data_path.glob("*.csv")) if data_path.exists() else []
         
         if csv_files:
-            st.info(f"📁 Encontrados {len(csv_files)} arquivos CSV na pasta data")
-            
             # Priorizar datasets específicos
             datasets_prioritarios = [
                 'veterinary_complete_real_dataset.csv',
@@ -80,8 +78,6 @@ def carregar_dataset_completo():
             # Se não encontrar prioritário, usar o primeiro disponível
             if not dataset_escolhido:
                 dataset_escolhido = csv_files[0]
-            
-            st.success(f"✅ Carregando: {dataset_escolhido.name}")
             
             # Carregar o dataset
             df = pd.read_csv(dataset_escolhido)
@@ -216,8 +212,12 @@ with st.sidebar:
     st.subheader("📊 Status dos Dados")
     st.success(f"✅ Dataset carregado: {len(df)} registros")
     st.info(f"📅 Colunas: {len(df.columns)}")
-    st.info(f"🐾 Espécies: {df['especie'].nunique()}")
-    st.info(f"🏥 Diagnósticos: {df['diagnostico'].nunique()}")
+    
+    # Verificar se as colunas existem antes de acessá-las
+    if 'especie' in df.columns:
+        st.info(f"🐾 Espécies: {df['especie'].nunique()}")
+    if 'diagnostico' in df.columns:
+        st.info(f"🏥 Diagnósticos: {df['diagnostico'].nunique()}")
     
     # Mostrar informações sobre o dataset
     if hasattr(df, 'name') or 'veterinary' in str(df.columns):
