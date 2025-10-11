@@ -209,6 +209,31 @@ if df is None or len(df) == 0:
     st.error("❌ Erro ao carregar dados. Recarregue a página.")
     st.stop()
 
+# Forçar carregamento dos dados reais se ainda estiver usando dados pequenos
+if len(df) < 500:
+    st.warning(f"⚠️ Dataset pequeno detectado ({len(df)} registros). Tentando carregar dados reais...")
+    
+    # Tentar carregar dataset real específico
+    data_path = Path("data")
+    real_datasets = [
+        'veterinary_complete_real_dataset.csv',
+        'veterinary_master_dataset.csv',
+        'clinical_veterinary_data.csv'
+    ]
+    
+    for dataset_name in real_datasets:
+        dataset_path = data_path / dataset_name
+        if dataset_path.exists():
+            try:
+                df_real = pd.read_csv(dataset_path)
+                if len(df_real) > len(df):
+                    df = df_real
+                    st.success(f"✅ Carregado dataset real: {dataset_name} ({len(df)} registros)")
+                    break
+            except Exception as e:
+                st.error(f"❌ Erro ao carregar {dataset_name}: {e}")
+                continue
+
 # Sidebar
 with st.sidebar:
     st.image("https://img.icons8.com/color/96/000000/veterinarian.png", width=100)
@@ -218,6 +243,26 @@ with st.sidebar:
     st.subheader("📊 Status dos Dados")
     st.success(f"✅ Dataset carregado: {len(df)} registros")
     st.info(f"📅 Colunas: {len(df.columns)}")
+    
+    # Mostrar informações de debug detalhadas
+    if len(df) < 500:
+        st.error(f"⚠️ ATENÇÃO: Dataset pequeno detectado ({len(df)} registros)")
+        st.info("🔍 Verificando se datasets reais estão disponíveis...")
+        
+        data_path = Path("data")
+        if data_path.exists():
+            csv_files = list(data_path.glob("*.csv"))
+            st.info(f"📁 Arquivos CSV encontrados: {len(csv_files)}")
+            for csv_file in csv_files:
+                try:
+                    temp_df = pd.read_csv(csv_file)
+                    st.caption(f"  - {csv_file.name}: {len(temp_df)} registros")
+                except:
+                    st.caption(f"  - {csv_file.name}: erro ao carregar")
+        else:
+            st.error("❌ Pasta 'data' não encontrada!")
+    else:
+        st.success(f"🎉 Dataset real carregado com sucesso! ({len(df)} registros)")
     
     # Mostrar informações de debug sobre o dataset
     if hasattr(df, 'attrs') and 'dataset_source' in df.attrs:
