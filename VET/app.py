@@ -194,62 +194,28 @@ def carregar_dataset_fixo():
         st.error(f"❌ Erro ao carregar dataset: {str(e)}")
         return None
 
-# CARREGAR DADOS REAIS DIRETAMENTE - SEMPRE!
-if st.session_state.df_main is None:
-    st.info("🔄 Carregando dados reais...")
-    
-    # Primeiro tentar carregar de arquivos (se disponíveis)
-    data_path = Path("data")
-    df_real = None
-    dataset_carregado = None
-    
-    # Lista de datasets reais em ordem de prioridade
-    real_datasets = [
-        'veterinary_complete_real_dataset.csv',  # 800 registros
-        'clinical_veterinary_data.csv',          # 500 registros
-        'veterinary_master_dataset.csv',         # 500 registros
-        'veterinary_realistic_dataset.csv',      # 1280 registros
-        'laboratory_complete_panel.csv',         # 300 registros
-        'uci_horse_colic.csv',                   # 368 registros
-        'exemplo_vet.csv'                        # 300 registros (fallback)
-    ]
-    
-    # Tentar carregar cada dataset até encontrar um
-    for dataset_name in real_datasets:
-        dataset_path = data_path / dataset_name
-        if dataset_path.exists():
-            try:
-                df_real = pd.read_csv(dataset_path)
-                dataset_carregado = dataset_name
-                st.success(f"✅ Dataset carregado: {dataset_name} ({len(df_real)} registros)")
-                break
-            except Exception as e:
-                st.error(f"❌ Erro ao carregar {dataset_name}: {e}")
-                continue
-    
-    # Se não conseguiu carregar de arquivos, usar dados incorporados
-    if df_real is None or len(df_real) == 0:
-        st.info("📊 Carregando dados incorporados (800 registros)...")
-        df_real = carregar_dados_incorporados()
-        dataset_carregado = "dados_incorporados"
-        st.success(f"✅ Dados incorporados carregados: {len(df_real)} registros")
-    
-    # Verificar se os dados foram carregados
-    if df_real is not None and len(df_real) > 0:
-        st.session_state.df_main = df_real
-        st.session_state.dataset_carregado_auto = True
-        st.session_state.dataset_sempre_carregado = True
-        st.session_state.dados_prontos = True
-        
-        # Adicionar informações de debug
-        import datetime
-        st.session_state.dataset_source = dataset_carregado
-        st.session_state.dataset_timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    else:
-        st.session_state.dados_prontos = False
-        st.error("❌ Erro crítico: Não foi possível carregar nenhum dataset!")
-else:
+# FORÇAR CARREGAMENTO DE DADOS - SEMPRE!
+st.info("🔄 Inicializando sistema...")
+
+# SEMPRE carregar dados incorporados (não depender de arquivos externos)
+df_real = carregar_dados_incorporados()
+
+if df_real is not None and len(df_real) > 0:
+    # SEMPRE definir os dados no session state
+    st.session_state.df_main = df_real
+    st.session_state.dataset_carregado_auto = True
+    st.session_state.dataset_sempre_carregado = True
     st.session_state.dados_prontos = True
+    st.session_state.dataset_source = "dados_incorporados"
+    
+    # Adicionar informações de debug
+    import datetime
+    st.session_state.dataset_timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    st.success(f"✅ Sistema inicializado com {len(df_real)} registros!")
+else:
+    st.session_state.dados_prontos = False
+    st.error("❌ Erro crítico: Não foi possível inicializar o sistema!")
 
 # Sidebar com informações
 with st.sidebar:
