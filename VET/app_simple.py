@@ -201,38 +201,55 @@ def gerar_dados_sinteticos():
     df = pd.DataFrame(data)
     return df
 
-# Carregar dados automaticamente SEMPRE
-df = carregar_dataset_completo()
+# CARREGAR DADOS REAIS DIRETAMENTE - SEMPRE!
+st.info("🔄 Carregando dados reais...")
+
+# Tentar carregar datasets reais diretamente
+data_path = Path("data")
+df = None
+dataset_carregado = None
+
+# Lista de datasets reais em ordem de prioridade
+real_datasets = [
+    'veterinary_complete_real_dataset.csv',  # 800 registros
+    'clinical_veterinary_data.csv',          # 500 registros
+    'veterinary_master_dataset.csv',         # 500 registros
+    'veterinary_realistic_dataset.csv',      # 1280 registros
+    'laboratory_complete_panel.csv',         # 300 registros
+    'uci_horse_colic.csv',                   # 368 registros
+    'exemplo_vet.csv'                        # 300 registros (fallback)
+]
+
+# Tentar carregar cada dataset até encontrar um
+for dataset_name in real_datasets:
+    dataset_path = data_path / dataset_name
+    if dataset_path.exists():
+        try:
+            df = pd.read_csv(dataset_path)
+            dataset_carregado = dataset_name
+            st.success(f"✅ Dataset carregado: {dataset_name} ({len(df)} registros)")
+            break
+        except Exception as e:
+            st.error(f"❌ Erro ao carregar {dataset_name}: {e}")
+            continue
+
+# Se não conseguiu carregar nenhum dataset real, usar função de fallback
+if df is None or len(df) == 0:
+    st.warning("⚠️ Não foi possível carregar datasets reais. Usando função de fallback...")
+    df = carregar_dataset_completo()
+    dataset_carregado = "fallback"
 
 # Verificar se os dados foram carregados
 if df is None or len(df) == 0:
-    st.error("❌ Erro ao carregar dados. Recarregue a página.")
+    st.error("❌ Erro crítico: Não foi possível carregar nenhum dataset!")
     st.stop()
 
-# Forçar carregamento dos dados reais se ainda estiver usando dados pequenos
-if len(df) < 500:
-    st.warning(f"⚠️ Dataset pequeno detectado ({len(df)} registros). Tentando carregar dados reais...")
-    
-    # Tentar carregar dataset real específico
-    data_path = Path("data")
-    real_datasets = [
-        'veterinary_complete_real_dataset.csv',
-        'veterinary_master_dataset.csv',
-        'clinical_veterinary_data.csv'
-    ]
-    
-    for dataset_name in real_datasets:
-        dataset_path = data_path / dataset_name
-        if dataset_path.exists():
-            try:
-                df_real = pd.read_csv(dataset_path)
-                if len(df_real) > len(df):
-                    df = df_real
-                    st.success(f"✅ Carregado dataset real: {dataset_name} ({len(df)} registros)")
-                    break
-            except Exception as e:
-                st.error(f"❌ Erro ao carregar {dataset_name}: {e}")
-                continue
+# Adicionar informações de debug
+df.attrs = {
+    'dataset_source': dataset_carregado,
+    'dataset_path': str(data_path / dataset_carregado) if dataset_carregado != "fallback" else "fallback",
+    'load_timestamp': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+}
 
 # Sidebar
 with st.sidebar:
@@ -244,25 +261,21 @@ with st.sidebar:
     st.success(f"✅ Dataset carregado: {len(df)} registros")
     st.info(f"📅 Colunas: {len(df.columns)}")
     
-    # Mostrar informações de debug detalhadas
-    if len(df) < 500:
-        st.error(f"⚠️ ATENÇÃO: Dataset pequeno detectado ({len(df)} registros)")
-        st.info("🔍 Verificando se datasets reais estão disponíveis...")
-        
-        data_path = Path("data")
-        if data_path.exists():
-            csv_files = list(data_path.glob("*.csv"))
-            st.info(f"📁 Arquivos CSV encontrados: {len(csv_files)}")
-            for csv_file in csv_files:
-                try:
-                    temp_df = pd.read_csv(csv_file)
-                    st.caption(f"  - {csv_file.name}: {len(temp_df)} registros")
-                except:
-                    st.caption(f"  - {csv_file.name}: erro ao carregar")
-        else:
-            st.error("❌ Pasta 'data' não encontrada!")
+    # Mostrar status do dataset carregado
+    if len(df) >= 500:
+        st.success(f"🎉 Dataset real carregado! ({len(df)} registros)")
+    elif len(df) >= 300:
+        st.warning(f"⚠️ Dataset médio carregado ({len(df)} registros)")
     else:
-        st.success(f"🎉 Dataset real carregado com sucesso! ({len(df)} registros)")
+        st.error(f"❌ Dataset pequeno detectado ({len(df)} registros)")
+        
+    # Mostrar informações básicas sobre arquivos disponíveis
+    data_path = Path("data")
+    if data_path.exists():
+        csv_files = list(data_path.glob("*.csv"))
+        st.info(f"📁 {len(csv_files)} arquivos CSV disponíveis")
+    else:
+        st.error("❌ Pasta 'data' não encontrada!")
     
     # Mostrar informações de debug sobre o dataset
     if hasattr(df, 'attrs') and 'dataset_source' in df.attrs:
