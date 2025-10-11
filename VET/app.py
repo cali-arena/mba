@@ -77,208 +77,9 @@ if 'feature_names' not in st.session_state:
 if 'target_names' not in st.session_state:
     st.session_state.target_names = None
 
-# Função para carregar dados incorporados (dados reais hardcoded)
-def carregar_dados_incorporados():
-    """Carrega dados reais incorporados diretamente no código"""
-    try:
-        # Dados veterinários realistas com padrões clínicos corretos (800 registros)
-        np.random.seed(42)  # Para resultados consistentes
-        
-        # Criar dados com padrões clínicos realistas
-        n_samples = 800
-        dados_reais = {
-            'id': [f'VET{i:04d}' for i in range(1, n_samples + 1)],
-            'especie': ['Cão'] * 400 + ['Gato'] * 400,
-            'raca': ['SRD', 'Labrador', 'Pastor', 'Poodle', 'Persa', 'Siames', 'Maine Coon'] * 114 + ['SRD'] * 2,
-            'idade_anos': np.random.uniform(1, 20, n_samples).round(1),
-            'sexo': np.random.choice(['M', 'F'], n_samples),
-        }
-        
-        # Valores laboratoriais base com padrões clínicos
-        # Normal
-        normal_mask = np.random.choice([0, 1], n_samples, p=[0.3, 0.7])
-        
-        # Diabetes (alta glicose, poliuria, polidipsia)
-        diabetes_mask = np.random.choice([0, 1], n_samples, p=[0.85, 0.15])
-        
-        # Insuficiência Renal (alta ureia, creatinina)
-        renal_mask = np.random.choice([0, 1], n_samples, p=[0.9, 0.1])
-        
-        # Anemia (baixa hemoglobina, hematocrito)
-        anemia_mask = np.random.choice([0, 1], n_samples, p=[0.9, 0.1])
-        
-        # Hepatite (alta ALT, AST)
-        hepatic_mask = np.random.choice([0, 1], n_samples, p=[0.95, 0.05])
-        
-        # Infecção (alta leucocitos, febre)
-        infeccao_mask = np.random.choice([0, 1], n_samples, p=[0.8, 0.2])
-        
-        # Gerar valores laboratoriais com padrões clínicos
-        hemoglobina = np.where(anemia_mask, 
-                              np.random.normal(8, 1.5, n_samples),  # Anemia: baixa
-                              np.random.normal(13, 2, n_samples))   # Normal
-        
-        hematocrito = np.where(anemia_mask,
-                              np.random.normal(25, 5, n_samples),   # Anemia: baixo
-                              np.random.normal(42, 5, n_samples))   # Normal
-        
-        glicose = np.where(diabetes_mask,
-                          np.random.normal(180, 30, n_samples),     # Diabetes: alta
-                          np.random.normal(95, 15, n_samples))      # Normal
-        
-        ureia = np.where(renal_mask,
-                        np.random.normal(80, 20, n_samples),        # Renal: alta
-                        np.random.normal(25, 8, n_samples))         # Normal
-        
-        creatinina = np.where(renal_mask,
-                             np.random.normal(3.5, 1, n_samples),   # Renal: alta
-                             np.random.normal(1.0, 0.3, n_samples)) # Normal
-        
-        alt = np.where(hepatic_mask,
-                      np.random.normal(120, 40, n_samples),         # Hepática: alta
-                      np.random.normal(35, 12, n_samples))          # Normal
-        
-        ast = np.where(hepatic_mask,
-                      np.random.normal(80, 25, n_samples),          # Hepática: alta
-                      np.random.normal(25, 8, n_samples))           # Normal
-        
-        leucocitos = np.where(infeccao_mask,
-                             np.random.normal(15000, 3000, n_samples), # Infecção: alta
-                             np.random.normal(7500, 1500, n_samples))  # Normal
-        
-        # Adicionar valores laboratoriais
-        dados_reais.update({
-            'hemoglobina': np.clip(hemoglobina, 5, 20).round(1),
-            'hematocrito': np.clip(hematocrito, 15, 55).round(1),
-            'leucocitos': np.clip(leucocitos, 3000, 25000).round(0),
-            'plaquetas': np.random.normal(300, 100, n_samples).round(0),
-            'glicose': np.clip(glicose, 50, 300).round(1),
-            'ureia': np.clip(ureia, 10, 150).round(1),
-            'creatinina': np.clip(creatinina, 0.5, 8).round(2),
-            'alt': np.clip(alt, 10, 300).round(1),
-            'ast': np.clip(ast, 10, 200).round(1),
-            'fosfatase_alcalina': np.random.normal(80, 30, n_samples).round(1),
-            'proteinas_totais': np.random.normal(7, 1, n_samples).round(2),
-            'albumina': np.random.normal(3.5, 0.5, n_samples).round(2),
-            'colesterol': np.random.normal(200, 50, n_samples).round(1),
-            'triglicerideos': np.random.normal(100, 30, n_samples).round(1),
-            'eosinofilos': np.random.normal(2, 1, n_samples).round(1),
-        })
-        
-        # Sintomas baseados em padrões clínicos
-        febre = np.where(infeccao_mask,
-                        np.random.choice([0, 1], n_samples, p=[0.3, 0.7]),  # Infecção: mais febre
-                        np.random.choice([0, 1], n_samples, p=[0.8, 0.2]))  # Normal: menos febre
-        
-        poliuria = np.where(diabetes_mask,
-                           np.random.choice([0, 1], n_samples, p=[0.2, 0.8]),  # Diabetes: mais poliuria
-                           np.random.choice([0, 1], n_samples, p=[0.9, 0.1]))  # Normal: menos poliuria
-        
-        polidipsia = np.where(diabetes_mask,
-                             np.random.choice([0, 1], n_samples, p=[0.1, 0.9]),  # Diabetes: mais polidipsia
-                             np.random.choice([0, 1], n_samples, p=[0.95, 0.05])) # Normal: menos polidipsia
-        
-        # Adicionar sintomas
-        dados_reais.update({
-            'febre': febre,
-            'apatia': np.where(anemia_mask | renal_mask,
-                              np.random.choice([0, 1], n_samples, p=[0.4, 0.6]),
-                              np.random.choice([0, 1], n_samples, p=[0.7, 0.3])),
-            'perda_peso': np.where(diabetes_mask | renal_mask,
-                                  np.random.choice([0, 1], n_samples, p=[0.3, 0.7]),
-                                  np.random.choice([0, 1], n_samples, p=[0.8, 0.2])),
-            'vomito': np.random.choice([0, 1], n_samples, p=[0.7, 0.3]),
-            'diarreia': np.random.choice([0, 1], n_samples, p=[0.8, 0.2]),
-            'tosse': np.random.choice([0, 1], n_samples, p=[0.9, 0.1]),
-            'letargia': np.where(anemia_mask | renal_mask,
-                                np.random.choice([0, 1], n_samples, p=[0.3, 0.7]),
-                                np.random.choice([0, 1], n_samples, p=[0.8, 0.2])),
-            'feridas_cutaneas': np.random.choice([0, 1], n_samples, p=[0.9, 0.1]),
-            'poliuria': poliuria,
-            'polidipsia': polidipsia,
-        })
-        
-        # Diagnósticos baseados nos padrões clínicos
-        diagnostico = []
-        for i in range(n_samples):
-            if diabetes_mask[i] and poliuria[i] and polidipsia[i]:
-                diagnostico.append('Diabetes Mellitus')
-            elif renal_mask[i] and (ureia[i] > 60 or creatinina[i] > 2):
-                diagnostico.append('Insuficiência Renal')
-            elif anemia_mask[i] and hemoglobina[i] < 10:
-                diagnostico.append('Anemia')
-            elif hepatic_mask[i] and (alt[i] > 80 or ast[i] > 60):
-                diagnostico.append('Hepatite')
-            elif infeccao_mask[i] and febre[i] and leucocitos[i] > 12000:
-                diagnostico.append('Infecção Respiratória')
-            elif normal_mask[i]:
-                diagnostico.append('Normal')
-            else:
-                diagnostico.append(np.random.choice([
-                    'Dermatite', 'Doença Periodontal', 'Artrose', 
-                    'Hipertireoidismo', 'Cardiomiopatia', 'Pancreatite'
-                ]))
-        
-        dados_reais['diagnostico'] = diagnostico
-        
-        df = pd.DataFrame(dados_reais)
-        
-        # Padronizar nomes de colunas se necessário
-        if 'especie' in df.columns:
-            df['especie'] = df['especie'].str.title()
-            df['especie'] = df['especie'].replace({'Canina': 'Cão', 'Felina': 'Gato'})
-        
-        return df
-        
-    except Exception as e:
-        st.error(f"❌ Erro ao carregar dados incorporados: {str(e)}")
-        return None
+# Função removida - APENAS dados reais serão usados
 
-# Função para carregar dataset automaticamente (fallback)
-def carregar_dataset_fixo():
-    """Carrega o dataset de forma fixa e em cache"""
-    try:
-        # Tentar carregar dataset da pasta data - priorizar datasets reais
-        data_path = Path("data")
-        csv_files = list(data_path.glob("*.csv")) if data_path.exists() else []
-        
-        if csv_files:
-            # Priorizar datasets reais específicos
-            datasets_prioritarios = [
-                'veterinary_complete_real_dataset.csv',
-                'veterinary_master_dataset.csv', 
-                'veterinary_realistic_dataset.csv',
-                'clinical_veterinary_data.csv',
-                'laboratory_complete_panel.csv'
-            ]
-            
-            for dataset_name in datasets_prioritarios:
-                dataset_path = data_path / dataset_name
-                if dataset_path.exists():
-                    df = pd.read_csv(dataset_path)
-                    if df is not None and len(df) > 0:
-                        # Adicionar metadados
-                        df.attrs['dataset_source'] = f'dados_reais_{dataset_name}'
-                        df.attrs['dataset_path'] = str(dataset_path)
-                        df.attrs['load_timestamp'] = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
-                        return df
-            
-            # Se não encontrou os prioritários, usar o primeiro disponível
-            if csv_files:
-                dataset_path = csv_files[0]
-                df = pd.read_csv(dataset_path)
-                if df is not None and len(df) > 0:
-                    df.attrs['dataset_source'] = f'dados_reais_{dataset_path.name}'
-                    df.attrs['dataset_path'] = str(dataset_path)
-                    df.attrs['load_timestamp'] = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
-                    return df
-        
-        # Fallback: dados incorporados
-        return carregar_dados_incorporados()
-        
-    except Exception as e:
-        st.error(f"❌ Erro ao carregar dataset: {str(e)}")
-        return None
+# Função removida - carregamento direto implementado abaixo
 
 # FORÇAR CARREGAMENTO DE DADOS - SEMPRE!
 st.info("🔄 Inicializando sistema...")
@@ -313,17 +114,12 @@ try:
 except Exception as e:
     st.warning(f"⚠️ Erro ao carregar dados reais: {e}")
 
-# 2. Se não conseguiu carregar dados reais, usar dados incorporados melhorados
-if df_real is None or len(df_real) == 0:
-    st.info("🔄 Carregando dados incorporados melhorados...")
-    df_real = carregar_dados_incorporados()
-    dataset_source = "dados_incorporados_melhorados"
-
+# 2. APENAS dados reais - SEM fallback para sintéticos
 if df_real is not None and len(df_real) > 0:
     # SEMPRE definir os dados no session state
     st.session_state.df_main = df_real
-    st.session_state.dataset_carregado_auto = True
-    st.session_state.dataset_sempre_carregado = True
+            st.session_state.dataset_carregado_auto = True
+            st.session_state.dataset_sempre_carregado = True
     st.session_state.dados_prontos = True
     st.session_state.dataset_source = dataset_source
     
@@ -334,7 +130,30 @@ if df_real is not None and len(df_real) > 0:
     st.success(f"✅ Sistema inicializado com {len(df_real)} registros de {dataset_source}!")
 else:
     st.session_state.dados_prontos = False
-    st.error("❌ Erro crítico: Não foi possível inicializar o sistema!")
+    st.error("❌ ERRO: Nenhum dataset real encontrado!")
+    st.error("📁 Verifique se existem arquivos CSV na pasta 'data/':")
+    
+    # Listar arquivos disponíveis
+    data_path = Path("data")
+    if data_path.exists():
+        csv_files = list(data_path.glob("*.csv"))
+        if csv_files:
+            st.info(f"📋 Arquivos encontrados na pasta data/:")
+            for file in csv_files:
+                st.write(f"  - {file.name}")
+        else:
+            st.warning("⚠️ Pasta 'data/' existe mas não contém arquivos CSV")
+    else:
+        st.warning("⚠️ Pasta 'data/' não encontrada")
+    
+    st.info("💡 Para usar o sistema, adicione datasets reais na pasta 'data/' com os seguintes nomes:")
+    st.write("- veterinary_complete_real_dataset.csv")
+    st.write("- veterinary_master_dataset.csv")
+    st.write("- veterinary_realistic_dataset.csv")
+    st.write("- clinical_veterinary_data.csv")
+    st.write("- laboratory_complete_panel.csv")
+    
+    st.stop()
 
 # Sidebar com informações
 with st.sidebar:
@@ -840,7 +659,7 @@ elif pagina == "🤖 Treinar Modelo":
                     
                     if ensemble_accuracy > best_accuracy:
                         st.success(f"🚀 **Melhoria:** Ensemble é {ensemble_accuracy - best_accuracy:.3f} pontos melhor que o melhor modelo individual!")
-                    else:
+else:
                         st.info("ℹ️ Ensemble não melhorou significativamente o melhor modelo individual.")
                 
                 # Mostrar top 3 modelos
@@ -887,19 +706,19 @@ elif pagina == "🤖 Treinar Modelo":
                 st.subheader("💡 Sugestões para Melhorar Acurácia (>85%)")
                 
                 col1, col2 = st.columns(2)
-                
-                with col1:
-                    st.markdown("""
+
+with col1:
+    st.markdown("""
                     **🔧 Feature Engineering:**
                     - ✅ Criar mais features derivadas
                     - ✅ Combinar exames laboratoriais
                     - ✅ Agrupar sintomas por severidade
                     - ✅ Usar idade categorizada
                     - ✅ Criar índices clínicos específicos
-                    """)
-                
-                with col2:
-                    st.markdown("""
+    """)
+
+with col2:
+    st.markdown("""
                     **🤖 Modelos Avançados:**
                     - ✅ XGBoost com hiperparâmetros otimizados
                     - ✅ Ensemble de múltiplos modelos
@@ -1010,10 +829,10 @@ elif pagina == "📈 Estatísticas":
     # Selecionar variável para análise
     if len(numeric_cols) > 0:
         var_analise = st.selectbox("Selecione uma variável para análise", numeric_cols)
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
+
+col1, col2 = st.columns(2)
+
+with col1:
             # Histograma
             fig = px.histogram(df, x=var_analise, nbins=30, title=f"Distribuição de {var_analise}")
             st.plotly_chart(fig, use_container_width=True)
