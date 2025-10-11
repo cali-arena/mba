@@ -49,7 +49,7 @@ st.markdown('<div class="main-header">🐾 VetDiagnosisAI</div>', unsafe_allow_h
 st.markdown('<div class="sub-header">Sistema Inteligente de Apoio ao Diagnóstico Veterinário</div>', unsafe_allow_html=True)
 
 # Função para carregar datasets reais
-@st.cache_data(ttl=3600)  # Cache por 1 hora
+@st.cache_data(ttl=60)  # Cache muito menor para forçar atualização
 def carregar_dataset_completo():
     """Carrega o dataset completo da pasta data"""
     try:
@@ -81,6 +81,10 @@ def carregar_dataset_completo():
             
             # Carregar o dataset
             df = pd.read_csv(dataset_escolhido)
+            
+            # Adicionar informação sobre qual dataset foi carregado
+            df.attrs['dataset_source'] = dataset_escolhido.name
+            df.attrs['dataset_path'] = str(dataset_escolhido)
             
             # Limpar e preparar dados
             df = df.dropna(how='all')  # Remover linhas completamente vazias
@@ -213,6 +217,13 @@ with st.sidebar:
     st.success(f"✅ Dataset carregado: {len(df)} registros")
     st.info(f"📅 Colunas: {len(df.columns)}")
     
+    # Mostrar informações de debug sobre o dataset
+    if hasattr(df, 'attrs') and 'dataset_source' in df.attrs:
+        st.success(f"📁 Dataset: {df.attrs['dataset_source']}")
+        st.caption(f"🔗 Caminho: {df.attrs['dataset_path']}")
+    else:
+        st.warning("⚠️ Informações do dataset não disponíveis")
+    
     # Verificar se as colunas existem antes de acessá-las
     if 'especie' in df.columns:
         st.info(f"🐾 Espécies: {df['especie'].nunique()}")
@@ -224,6 +235,12 @@ with st.sidebar:
         st.success("📁 Dataset real carregado")
     else:
         st.info("🔄 Usando dados sintéticos")
+    
+    # Botão para forçar reload
+    st.markdown("---")
+    if st.button("🔄 Forçar Reload dos Dados", use_container_width=True):
+        carregar_dataset_completo.clear()
+        st.rerun()
     
     # Mostrar primeiras colunas
     st.write("**Colunas principais:**")
