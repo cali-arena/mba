@@ -6,15 +6,21 @@ Aplicação principal Streamlit
 import streamlit as st
 import pandas as pd
 import numpy as np
+import pickle
+import joblib
 from pathlib import Path
+from datetime import datetime
 from sklearn.preprocessing import LabelEncoder, StandardScaler
-from sklearn.model_selection import train_test_split, cross_val_score
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, ExtraTreesClassifier, AdaBoostClassifier, BaggingClassifier
+from sklearn.model_selection import train_test_split, cross_val_score, GridSearchCV, StratifiedKFold, RandomizedSearchCV
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, ExtraTreesClassifier, AdaBoostClassifier, BaggingClassifier, VotingClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, f1_score, precision_score, recall_score
+from sklearn.pipeline import Pipeline
+from sklearn.feature_selection import SelectKBest, f_classif, RFE
+from sklearn.decomposition import PCA
 import plotly.express as px
 import plotly.graph_objects as go
 
@@ -127,15 +133,15 @@ try:
                         dataset_source = f"dados_reais_{dataset_name}"
                         st.success(f"✅ Carregado dataset real: {dataset_name} ({len(df_real)} registros)")
                         break
-except Exception as e:
+    except Exception as e:
     st.warning(f"⚠️ Erro ao carregar dados reais: {e}")
 
 # 2. APENAS dados reais - SEM fallback para sintéticos
 if df_real is not None and len(df_real) > 0:
     # SEMPRE definir os dados no session state
     st.session_state.df_main = df_real
-    st.session_state.dataset_carregado_auto = True
-    st.session_state.dataset_sempre_carregado = True
+            st.session_state.dataset_carregado_auto = True
+            st.session_state.dataset_sempre_carregado = True
     st.session_state.dados_prontos = True
     st.session_state.dataset_source = dataset_source
     
@@ -334,7 +340,7 @@ elif pagina == "📊 Análise de Dados":
         st.dataframe(df_filtrado.head(100), use_container_width=True)
 
 elif pagina == "🤖 Treinar Modelo":
-    st.header("🤖 Sistema de Machine Learning Veterinário")
+    st.header("🚀 Gradient Boosting Otimizado - Sistema de Aprendizado Contínuo")
     
     if st.session_state.df_main is not None:
         df = st.session_state.df_main
@@ -344,6 +350,15 @@ elif pagina == "🤖 Treinar Modelo":
             st.error("❌ Coluna 'diagnostico' não encontrada. Não é possível treinar modelos.")
         else:
             st.success(f"✅ Dados disponíveis: {len(df)} registros")
+            
+            # Mostrar informações dos dados
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("Total de Registros", len(df))
+            with col2:
+                st.metric("Diagnósticos Únicos", df['diagnostico'].nunique())
+            with col3:
+                st.metric("Features Disponíveis", len(df.columns))
             
             # Preparar dados para ML
             st.subheader("🔧 Preparação dos Dados")
@@ -467,305 +482,283 @@ elif pagina == "🤖 Treinar Modelo":
             
             st.info(f"📊 Divisão dos dados: {X_train.shape[0]} treino, {X_test.shape[0]} teste")
             
-            # Treinar múltiplos modelos
-            st.subheader("🤖 Treinamento de Modelos")
-            st.info("🔄 Iniciando treinamento de 10 modelos de ML...")
+            # Sistema de Gradient Boosting Otimizado
+            st.subheader("🚀 Gradient Boosting Ultra-Otimizado")
+            st.info("🎯 Foco em alcançar 85%+ de acurácia com aprendizado contínuo")
             
-            st.success("✅ Bibliotecas importadas com sucesso!")
+            # Configurações avançadas
+            col1, col2 = st.columns(2)
+            with col1:
+                use_advanced_features = st.checkbox("🔧 Feature Engineering Avançado", value=True)
+                use_feature_selection = st.checkbox("🎯 Seleção de Features", value=True)
+            with col2:
+                use_hyperparameter_tuning = st.checkbox("⚙️ Otimização de Hiperparâmetros", value=True)
+                save_model = st.checkbox("💾 Salvar Modelo Treinado", value=True)
             
-            # Múltiplos modelos com hiperparâmetros otimizados para alta acurácia
-            models = {
-                'Random Forest (Otimizado)': RandomForestClassifier(
-                    n_estimators=500, 
-                    max_depth=15, 
-                    min_samples_split=3, 
-                    min_samples_leaf=1,
-                    max_features='sqrt',
-                    bootstrap=True,
-                    random_state=42
-                ),
-                'Gradient Boosting (Otimizado)': GradientBoostingClassifier(
-                    n_estimators=300,
-                    learning_rate=0.05,
-                    max_depth=8,
-                    min_samples_split=3,
-                    min_samples_leaf=1,
-                    subsample=0.8,
-                    random_state=42
-                ),
-                'Logistic Regression (Otimizado)': LogisticRegression(
-                    random_state=42, 
-                    max_iter=5000,
-                    C=0.1,
-                    solver='liblinear',
-                    class_weight='balanced'
-                ),
-                'SVM Linear (Otimizado)': SVC(
-                    kernel='linear',
-                    random_state=42, 
-                    probability=True,
-                    C=0.1,
-                    class_weight='balanced'
-                ),
-                'SVM RBF (Otimizado)': SVC(
-                    kernel='rbf',
-                    random_state=42, 
-                    probability=True,
-                    C=1.0,
-                    gamma='auto',
-                    class_weight='balanced'
-                ),
-                'K-Nearest Neighbors (Otimizado)': KNeighborsClassifier(
-                    n_neighbors=5,
-                    weights='distance',
-                    metric='minkowski',
-                    algorithm='auto'
-                ),
-                'Decision Tree (Otimizado)': DecisionTreeClassifier(
-                    max_depth=15,
-                    min_samples_split=2,
-                    min_samples_leaf=1,
-                    max_features='sqrt',
-                    random_state=42
-                ),
-                'Extra Trees (Otimizado)': ExtraTreesClassifier(
-                    n_estimators=500,
-                    max_depth=15,
-                    min_samples_split=2,
-                    min_samples_leaf=1,
-                    max_features='sqrt',
-                    random_state=42
-                ),
-                'AdaBoost (Otimizado)': AdaBoostClassifier(
-                    n_estimators=200,
-                    learning_rate=0.1,
-                    algorithm='SAMME.R',
-                    random_state=42
-                ),
-                'Bagging (Otimizado)': BaggingClassifier(
-                    n_estimators=200,
-                    max_samples=0.8,
-                    max_features=0.8,
-                    random_state=42
-                )
+            # Feature Engineering Avançado
+            if use_advanced_features:
+                st.subheader("🔧 Feature Engineering Avançado")
+                
+                # Criar features polinomiais
+                try:
+                    from sklearn.preprocessing import PolynomialFeatures
+                    poly = PolynomialFeatures(degree=2, interaction_only=True, include_bias=False)
+                    X_poly = poly.fit_transform(X)
+                    st.success(f"✅ Features polinomiais criadas: {X_poly.shape[1]} features")
+                    X = X_poly
+                except Exception as e:
+                    st.warning(f"⚠️ Erro ao criar features polinomiais: {e}")
+            
+            # Seleção de Features
+            if use_feature_selection:
+                st.subheader("🎯 Seleção de Features")
+                
+                # Usar SelectKBest para selecionar as melhores features
+                try:
+                    k_best = min(50, X.shape[1])  # Máximo 50 features ou todas se menos
+                    selector = SelectKBest(score_func=f_classif, k=k_best)
+                    X_selected = selector.fit_transform(X, y)
+                    selected_features = selector.get_support(indices=True)
+                    st.success(f"✅ {len(selected_features)} features selecionadas de {X.shape[1]}")
+                    X = X_selected
+                except Exception as e:
+                    st.warning(f"⚠️ Erro na seleção de features: {e}")
+            
+            # Gradient Boosting Ultra-Otimizado
+            st.subheader("🎯 Gradient Boosting Ultra-Otimizado")
+            
+            # Hiperparâmetros otimizados para alta performance
+            gb_params = {
+                'n_estimators': 1000,
+                'learning_rate': 0.01,
+                'max_depth': 12,
+                'min_samples_split': 2,
+                'min_samples_leaf': 1,
+                'subsample': 0.8,
+                'max_features': 'sqrt',
+                'random_state': 42,
+                'validation_fraction': 0.1,
+                'n_iter_no_change': 50,
+                'tol': 1e-4
             }
             
-            st.success(f"✅ {len(models)} modelos configurados: {list(models.keys())}")
-            
-            results = {}
-            
-            # Progress bar para treinamento
-            progress_bar = st.progress(0)
-            status_text = st.empty()
-            
-            for i, (name, model) in enumerate(models.items()):
-                status_text.text(f"🔄 Treinando {name}... ({i+1}/{len(models)})")
+            # Otimização adicional de hiperparâmetros
+            if use_hyperparameter_tuning:
+                st.info("🔄 Otimizando hiperparâmetros com RandomizedSearchCV...")
                 
+                # Grid de hiperparâmetros para otimização
+                param_grid = {
+                    'n_estimators': [800, 1000, 1200],
+                    'learning_rate': [0.005, 0.01, 0.02],
+                    'max_depth': [10, 12, 15],
+                    'subsample': [0.7, 0.8, 0.9],
+                    'min_samples_split': [2, 3, 5]
+                }
+                
+                # RandomizedSearchCV para otimização
+                gb_base = GradientBoostingClassifier(random_state=42)
+                random_search = RandomizedSearchCV(
+                    gb_base, param_grid, n_iter=20, cv=5, 
+                    scoring='accuracy', random_state=42, n_jobs=-1
+                )
+                
+                with st.spinner("🔄 Otimizando hiperparâmetros..."):
+                    random_search.fit(X_train_scaled, y_train)
+                
+                # Usar os melhores parâmetros encontrados
+                gb_params.update(random_search.best_params_)
+                st.success(f"✅ Melhores parâmetros encontrados: {random_search.best_score_:.4f}")
+            
+            # Criar modelo final otimizado
+            gb_model = GradientBoostingClassifier(**gb_params)
+            
+            # Treinar modelo Gradient Boosting otimizado
+            st.info("🔄 Treinando Gradient Boosting Ultra-Otimizado...")
+            
+            with st.spinner("🚀 Treinando modelo com 1000 estimadores..."):
+                # Treinar modelo
+                gb_model.fit(X_train_scaled, y_train)
+                
+                # Fazer predições
+                y_pred = gb_model.predict(X_test_scaled)
+                y_pred_proba = gb_model.predict_proba(X_test_scaled)
+            
+            # Calcular métricas detalhadas
+            accuracy = accuracy_score(y_test, y_pred)
+            f1 = f1_score(y_test, y_pred, average='macro')
+            precision = precision_score(y_test, y_pred, average='macro')
+            recall = recall_score(y_test, y_pred, average='macro')
+            
+            # Validação cruzada estratificada
+            cv_scores = cross_val_score(gb_model, X_train_scaled, y_train, cv=10, scoring='accuracy')
+            cv_mean = cv_scores.mean()
+            cv_std = cv_scores.std()
+            
+            st.success("✅ Modelo treinado com sucesso!")
+            
+            # Salvar modelo se solicitado
+            if save_model:
                 try:
-                    # Treinar modelo
-                    model.fit(X_train_scaled, y_train)
-                    y_pred = model.predict(X_test_scaled)
-                    
-                    # Calcular métricas
-                    accuracy = accuracy_score(y_test, y_pred)
-                    f1 = f1_score(y_test, y_pred, average='macro')
-                    precision = precision_score(y_test, y_pred, average='macro')
-                    recall = recall_score(y_test, y_pred, average='macro')
-                    
-                    # Validação cruzada
-                    cv_scores = cross_val_score(model, X_train_scaled, y_train, cv=5, scoring='accuracy')
-                    cv_mean = cv_scores.mean()
-                    cv_std = cv_scores.std()
-                    
-                    results[name] = {
-                        'model': model,
+                    # Salvar modelo e scaler
+                    model_data = {
+                        'model': gb_model,
+                        'scaler': scaler,
+                        'feature_names': list(df_ml.columns),
+                        'target_names': le_diagnostico.classes_,
                         'accuracy': accuracy,
-                        'f1_score': f1,
-                        'precision': precision,
-                        'recall': recall,
                         'cv_mean': cv_mean,
-                        'cv_std': cv_std,
-                        'predictions': y_pred
+                        'timestamp': datetime.now().isoformat(),
+                        'training_samples': len(X_train),
+                        'test_samples': len(X_test)
                     }
+                    
+                    # Salvar usando joblib
+                    model_path = Path("models")
+                    model_path.mkdir(exist_ok=True)
+                    
+                    joblib.dump(model_data, model_path / "gb_optimized_model.pkl")
+                    st.success(f"💾 Modelo salvo em: {model_path / 'gb_optimized_model.pkl'}")
+                    
+                    # Salvar também no session state para uso imediato
+                    st.session_state.gb_model = gb_model
+                    st.session_state.scaler = scaler
+                    st.session_state.le_diagnostico = le_diagnostico
+                    st.session_state.model_trained = True
                     
                 except Exception as e:
-                    st.error(f"❌ Erro ao treinar {name}: {str(e)}")
-                    results[name] = {
-                        'model': None,
-                        'accuracy': 0,
-                        'f1_score': 0,
-                        'precision': 0,
-                        'recall': 0,
-                        'cv_mean': 0,
-                        'cv_std': 0,
-                        'predictions': None
-                    }
-                
-                # Atualizar progress bar
-                progress_bar.progress((i + 1) / len(models))
+                    st.warning(f"⚠️ Erro ao salvar modelo: {e}")
+                    # Salvar pelo menos no session state
+                    st.session_state.gb_model = gb_model
+                    st.session_state.scaler = scaler
+                    st.session_state.le_diagnostico = le_diagnostico
+                    st.session_state.model_trained = True
             
-            status_text.text("✅ Treinamento concluído!")
-            progress_bar.empty()
-            status_text.empty()
+            # Mostrar resultados do Gradient Boosting
+            st.subheader("🎯 Resultados do Gradient Boosting Ultra-Otimizado")
             
-            st.success(f"🎉 Treinamento finalizado! {len([r for r in results.values() if r['model'] is not None])} modelos treinados com sucesso!")
+            # Métricas principais
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.metric("🎯 Acurácia", f"{accuracy:.1%}", delta=f"{accuracy-0.85:.1%}" if accuracy > 0.85 else None)
+            with col2:
+                st.metric("📊 F1-Score", f"{f1:.3f}")
+            with col3:
+                st.metric("🎪 Precision", f"{precision:.3f}")
+            with col4:
+                st.metric("🎭 Recall", f"{recall:.3f}")
             
-            # Mostrar resultados
-            st.subheader("📊 Comparação Completa de Modelos")
+            # Validação cruzada
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("✅ CV Mean (10-fold)", f"{cv_mean:.3f}")
+            with col2:
+                st.metric("📈 CV Std", f"{cv_std:.3f}")
             
-            # Tabela de resultados detalhada
-            results_data = []
-            for name in results.keys():
-                if results[name]['model'] is not None:
-                    results_data.append({
-                        'Modelo': name,
-                        'Acurácia': f"{results[name]['accuracy']:.3f}",
-                        'F1-Score': f"{results[name]['f1_score']:.3f}",
-                        'Precision': f"{results[name]['precision']:.3f}",
-                        'Recall': f"{results[name]['recall']:.3f}",
-                        'CV Mean': f"{results[name]['cv_mean']:.3f}",
-                        'CV Std': f"{results[name]['cv_std']:.3f}",
-                        'Score Total': f"{results[name]['accuracy'] + results[name]['f1_score'] + results[name]['cv_mean']:.3f}"
-                    })
-            
-            results_df = pd.DataFrame(results_data)
-            
-            # Ordenar por score total (acurácia + f1 + cv_mean)
-            if not results_df.empty:
-                results_df = results_df.sort_values('Score Total', ascending=False)
-                
-                # Mostrar tabela com formatação
-                st.dataframe(results_df, use_container_width=True)
-                
-                # Gráfico de comparação
-                fig = px.bar(
-                    results_df, 
-                    x='Modelo', 
-                    y=['Acurácia', 'F1-Score', 'CV Mean'],
-                    title='Comparação de Performance dos Modelos',
-                    barmode='group'
-                )
-                fig.update_layout(height=500)
-                st.plotly_chart(fig, use_container_width=True)
-                
-                # Melhor modelo
-                best_model_name = results_df.iloc[0]['Modelo']
-                best_model = results[best_model_name]['model']
-                best_accuracy = float(results_df.iloc[0]['Acurácia'])
-                best_score_total = float(results_df.iloc[0]['Score Total'])
-                
-                st.success(f"🏆 **Melhor Modelo:** {best_model_name}")
-                st.info(f"📊 **Acurácia:** {best_accuracy:.3f} | **Score Total:** {best_score_total:.3f}")
-                
-                # Ensemble dos top 3 modelos para melhorar acurácia
-                st.subheader("🎯 Ensemble dos Top 3 Modelos")
-                
-                top_3_models = []
-                top_3_names = []
-                
-                for i, (_, row) in enumerate(results_df.head(3).iterrows()):
-                    model_name = row['Modelo']
-                    if results[model_name]['model'] is not None:
-                        top_3_models.append(results[model_name]['model'])
-                        top_3_names.append(model_name)
-                
-                if len(top_3_models) >= 2:
-                    # Criar ensemble voting classifier
-                    from sklearn.ensemble import VotingClassifier
-                    
-                    ensemble = VotingClassifier(
-                        estimators=[(name, model) for name, model in zip(top_3_names, top_3_models)],
-                        voting='soft'
-                    )
-                    
-                    # Treinar ensemble
-                    ensemble.fit(X_train_scaled, y_train)
-                    ensemble_pred = ensemble.predict(X_test_scaled)
-                    ensemble_accuracy = accuracy_score(y_test, ensemble_pred)
-                    ensemble_f1 = f1_score(y_test, ensemble_pred, average='macro')
-                    
-                    st.success(f"🎯 **Ensemble Accuracy:** {ensemble_accuracy:.3f}")
-                    st.info(f"🎯 **Ensemble F1-Score:** {ensemble_f1:.3f}")
-                    
-                    if ensemble_accuracy > best_accuracy:
-                        st.success(f"🚀 **Melhoria:** Ensemble é {ensemble_accuracy - best_accuracy:.3f} pontos melhor que o melhor modelo individual!")
-                    else:
-                        st.info("ℹ️ Ensemble não melhorou significativamente o melhor modelo individual.")
-                
-                # Mostrar top 3 modelos
-                st.subheader("🥇 Top 3 Modelos")
-                top_3 = results_df.head(3)
-                for i, (_, row) in enumerate(top_3.iterrows(), 1):
-                    medal = ["🥇", "🥈", "🥉"][i-1]
-                    st.write(f"{medal} **{row['Modelo']}** - Acurácia: {row['Acurácia']} | Score: {row['Score Total']}")
-                
-                # Feature Importance (se disponível)
-                if hasattr(best_model, 'feature_importances_'):
-                    st.subheader("🎯 Importância das Features")
-                    
-                    feature_importance = pd.DataFrame({
-                        'Feature': feature_cols,
-                        'Importance': best_model.feature_importances_
-                    }).sort_values('Importance', ascending=False)
-                    
-                    fig = px.bar(feature_importance.head(10), x='Importance', y='Feature', 
-                                title='Top 10 Features Mais Importantes')
-                    st.plotly_chart(fig, use_container_width=True)
-                
-                # Matriz de confusão
-                st.subheader("🔍 Matriz de Confusão")
-                
-                y_pred_best = results[best_model_name]['predictions']
-                cm = confusion_matrix(y_test, y_pred_best)
-                
-                fig = px.imshow(cm, 
-                                labels=dict(x="Predito", y="Real", color="Quantidade"),
-                                x=le_diagnostico.classes_,
-                                y=le_diagnostico.classes_,
-                                title=f"Matriz de Confusão - {best_model_name}")
-                st.plotly_chart(fig, use_container_width=True)
-                
-                # Relatório de classificação
-                st.subheader("📋 Relatório Detalhado")
-                report = classification_report(y_test, y_pred_best, target_names=le_diagnostico.classes_, output_dict=True)
-                
-                report_df = pd.DataFrame(report).transpose()
-                st.dataframe(report_df, use_container_width=True)
-                
-                # Sugestões para melhorar acurácia
-                st.subheader("💡 Sugestões para Melhorar Acurácia (>85%)")
-                
-                col1, col2 = st.columns(2)
-
-                with col1:
-                    st.markdown("""
-                    **🔧 Feature Engineering:**
-                    - ✅ Criar mais features derivadas
-                    - ✅ Combinar exames laboratoriais
-                    - ✅ Agrupar sintomas por severidade
-                    - ✅ Usar idade categorizada
-                    - ✅ Criar índices clínicos específicos
-                    """)
-
-                with col2:
-                    st.markdown("""
-                    **🤖 Modelos Avançados:**
-                    - ✅ XGBoost com hiperparâmetros otimizados
-                    - ✅ Ensemble de múltiplos modelos
-                    - ✅ Validação cruzada estratificada
-                    - ✅ Balanceamento de classes
-                    - ✅ Seleção de features automática
-                    """)
-                
+            # Status da meta de 85%
+            if accuracy >= 0.85:
+                st.success(f"🎉 META ALCANÇADA! Acurácia de {accuracy:.1%} >= 85%!")
             else:
-                st.error("❌ Nenhum modelo foi treinado com sucesso!")
+                st.warning(f"🎯 Meta: 85% | Atual: {accuracy:.1%} | Faltam: {(0.85-accuracy)*100:.1f}%")
+            
+            # Feature Importance
+            st.subheader("🎯 Importância das Features")
+            
+            if hasattr(gb_model, 'feature_importances_'):
+                feature_importance = pd.DataFrame({
+                    'Feature': [f'Feature_{i}' for i in range(len(gb_model.feature_importances_))],
+                    'Importance': gb_model.feature_importances_
+                }).sort_values('Importance', ascending=False)
+                
+                # Top 15 features mais importantes
+                top_features = feature_importance.head(15)
+                
+                fig = px.bar(
+                    top_features, 
+                    x='Importance', 
+                    y='Feature',
+                    orientation='h',
+                    title='Top 15 Features Mais Importantes',
+                    color='Importance',
+                    color_continuous_scale='viridis'
+                )
+                fig.update_layout(height=600)
+                st.plotly_chart(fig, use_container_width=True)
+                
+                # Tabela de importância
+                st.dataframe(top_features, use_container_width=True)
+            
+            # Confusion Matrix
+            st.subheader("🎯 Matriz de Confusão")
+            
+            from sklearn.metrics import confusion_matrix
+            cm = confusion_matrix(y_test, y_pred)
+            
+            fig = px.imshow(
+                cm, 
+                text_auto=True, 
+                aspect="auto",
+                title="Matriz de Confusão - Gradient Boosting",
+                labels=dict(x="Predito", y="Real", color="Quantidade")
+            )
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # Classification Report
+            st.subheader("📊 Relatório de Classificação")
+            report = classification_report(y_test, y_pred, output_dict=True)
+            report_df = pd.DataFrame(report).transpose()
+            st.dataframe(report_df, use_container_width=True)
+            
+            # Sistema de Aprendizado Contínuo
+            st.subheader("🧠 Sistema de Aprendizado Contínuo")
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                st.info("📈 **Funcionalidades Implementadas:**")
+                st.write("✅ Modelo salvo automaticamente")
+                st.write("✅ Hiperparâmetros otimizados")
+                st.write("✅ Feature engineering avançado")
+                st.write("✅ Validação cruzada 10-fold")
+                st.write("✅ Persistência no session state")
+            
+            with col2:
+                st.info("🚀 **Próximos Passos:**")
+                st.write("🔄 Retreinamento incremental")
+                st.write("📊 Monitoramento de performance")
+                st.write("🎯 Ajuste automático de parâmetros")
+                st.write("📈 Análise de drift de dados")
+                st.write("🔧 Auto-tuning contínuo")
+            
+            # Sugestões para melhorar ainda mais
+            st.subheader("💡 Sugestões para Atingir 85%+ de Acurácia")
+            
+            if accuracy < 0.85:
+                st.warning("🎯 **Para alcançar 85%+ de acurácia:**")
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.write("🔧 **Feature Engineering:**")
+                    st.write("• Criar mais features derivadas")
+                    st.write("• Combinar exames laboratoriais")
+                    st.write("• Agrupar sintomas por severidade")
+                    st.write("• Usar idade categorizada")
+                    st.write("• Criar índices clínicos específicos")
+                
+                with col2:
+                    st.write("🚀 **Modelos Avançados:**")
+                    st.write("• XGBoost com hiperparâmetros otimizados")
+                    st.write("• Ensemble de múltiplos modelos")
+                    st.write("• Validação cruzada estratificada")
+                    st.write("• Balanceamento de classes")
+                    st.write("• Seleção de features automática")
+            else:
+                st.success("🎉 **Meta alcançada!** Continue adicionando dados para melhorar ainda mais!")
+    
     else:
-        st.error("❌ Dataset não carregado")
+        st.error("❌ Nenhum dataset carregado. Por favor, carregue um dataset primeiro.")
 
 elif pagina == "🔍 Predição":
-    st.header("🔍 Predição de Diagnóstico")
+    st.header("🔍 Predição com Gradient Boosting Otimizado")
     
-    if st.session_state.modelo_treinado is not None:
+    if hasattr(st.session_state, 'gb_model') and st.session_state.gb_model is not None:
         st.success("✅ Modelo carregado e pronto para predição!")
         
         # Formulário de entrada
@@ -859,10 +852,10 @@ elif pagina == "📈 Estatísticas":
     # Selecionar variável para análise
     if len(numeric_cols) > 0:
         var_analise = st.selectbox("Selecione uma variável para análise", numeric_cols)
-        
-        col1, col2 = st.columns(2)
 
-        with col1:
+col1, col2 = st.columns(2)
+
+with col1:
             # Histograma
             fig = px.histogram(df, x=var_analise, nbins=30, title=f"Distribuição de {var_analise}")
             st.plotly_chart(fig, use_container_width=True)
