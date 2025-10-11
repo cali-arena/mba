@@ -707,18 +707,18 @@ elif pagina == "🤖 Treinar Modelo":
                 
                 col1, col2 = st.columns(2)
 
-with col1:
-    st.markdown("""
+                with col1:
+                    st.markdown("""
                     **🔧 Feature Engineering:**
                     - ✅ Criar mais features derivadas
                     - ✅ Combinar exames laboratoriais
                     - ✅ Agrupar sintomas por severidade
                     - ✅ Usar idade categorizada
                     - ✅ Criar índices clínicos específicos
-    """)
+                    """)
 
-with col2:
-    st.markdown("""
+                with col2:
+                    st.markdown("""
                     **🤖 Modelos Avançados:**
                     - ✅ XGBoost com hiperparâmetros otimizados
                     - ✅ Ensemble de múltiplos modelos
