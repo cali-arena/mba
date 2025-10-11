@@ -4,7 +4,19 @@ Aplicação principal Streamlit
 """
 
 import streamlit as st
+import pandas as pd
+import numpy as np
 from pathlib import Path
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, ExtraTreesClassifier, AdaBoostClassifier, BaggingClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, f1_score, precision_score, recall_score
+import plotly.express as px
+import plotly.graph_objects as go
 
 # Configuração da página
 st.set_page_config(
@@ -582,7 +594,6 @@ elif pagina == "🤖 Treinar Modelo":
             df_ml = df.copy()
             
             # 1. Codificação de variáveis categóricas
-            from sklearn.preprocessing import LabelEncoder, StandardScaler
             le_especie = LabelEncoder()
             le_sexo = LabelEncoder()
             le_diagnostico = LabelEncoder()
@@ -689,7 +700,6 @@ elif pagina == "🤖 Treinar Modelo":
             st.success(f"✅ Dados preparados: {X.shape[0]} amostras, {X.shape[1]} features")
             
             # Dividir dados
-            from sklearn.model_selection import train_test_split
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
             
             # Escalar features
@@ -702,15 +712,6 @@ elif pagina == "🤖 Treinar Modelo":
             # Treinar múltiplos modelos
             st.subheader("🤖 Treinamento de Modelos")
             st.info("🔄 Iniciando treinamento de 10 modelos de ML...")
-            
-            from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, ExtraTreesClassifier, AdaBoostClassifier, BaggingClassifier
-            from sklearn.linear_model import LogisticRegression
-            from sklearn.svm import SVC
-            from sklearn.neighbors import KNeighborsClassifier
-            from sklearn.tree import DecisionTreeClassifier
-            from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, f1_score, precision_score, recall_score
-            import plotly.express as px
-            import plotly.graph_objects as go
             
             st.success("✅ Bibliotecas importadas com sucesso!")
             
@@ -798,9 +799,8 @@ elif pagina == "🤖 Treinar Modelo":
                     precision = precision_score(y_test, y_pred, average='macro')
                     recall = recall_score(y_test, y_pred, average='macro')
                     
-                    # Validação cruzada
-                    from sklearn.model_selection import cross_val_score
-                    cv_scores = cross_val_score(model, X_train_scaled, y_train, cv=5, scoring='accuracy')
+                            # Validação cruzada
+                            cv_scores = cross_val_score(model, X_train_scaled, y_train, cv=5, scoring='accuracy')
                     cv_mean = cv_scores.mean()
                     cv_std = cv_scores.std()
                     
