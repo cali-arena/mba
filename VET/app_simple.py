@@ -578,30 +578,70 @@ elif pagina == "🤖 Predição de Diagnóstico":
     
     df_ml['diagnostico_encoded'] = le_diagnostico.fit_transform(df_ml['diagnostico'])
     
-    # 2. Criar features derivadas
+    # 2. Criar features derivadas avançadas
     if 'idade_anos' in df_ml.columns:
-        df_ml['idade_categoria'] = pd.cut(df_ml['idade_anos'], bins=[0, 2, 7, 15, 100], labels=['Filhote', 'Adulto Jovem', 'Adulto', 'Idoso'])
+        df_ml['idade_categoria'] = pd.cut(df_ml['idade_anos'], bins=[0, 1, 3, 7, 12, 100], labels=['Filhote', 'Jovem', 'Adulto', 'Maduro', 'Idoso'])
         df_ml['idade_categoria_encoded'] = LabelEncoder().fit_transform(df_ml['idade_categoria'])
+        
+        # Features de idade
+        df_ml['idade_quadrado'] = df_ml['idade_anos'] ** 2
+        df_ml['idade_log'] = np.log1p(df_ml['idade_anos'])
+        df_ml['idade_senior'] = (df_ml['idade_anos'] > 7).astype(int)
+        df_ml['idade_filhote'] = (df_ml['idade_anos'] < 1).astype(int)
     
-    # 3. Features de exames laboratoriais combinados
-    exames_cols = ['hemoglobina', 'hematocrito', 'leucocitos', 'glicose', 'ureia', 'creatinina']
+    # 3. Features de exames laboratoriais combinados avançados
+    exames_cols = ['hemoglobina', 'hematocrito', 'leucocitos', 'glicose', 'ureia', 'creatinina', 'alt', 'ast', 'fosfatase_alcalina', 'proteinas_totais', 'albumina']
     exames_disponiveis = [col for col in exames_cols if col in df_ml.columns]
     
-    if len(exames_disponiveis) >= 2:
-        # Criar índices combinados
+    if len(exames_disponiveis) >= 3:
+        # Criar índices clínicos específicos
         if 'hemoglobina' in df_ml.columns and 'hematocrito' in df_ml.columns:
-            df_ml['indice_anemia'] = df_ml['hemoglobina'] / df_ml['hematocrito']
+            df_ml['indice_anemia'] = df_ml['hemoglobina'] / (df_ml['hematocrito'] / 3)
+            df_ml['anemia_grave'] = (df_ml['hemoglobina'] < 8).astype(int)
+        
         if 'ureia' in df_ml.columns and 'creatinina' in df_ml.columns:
             df_ml['indice_renal'] = df_ml['ureia'] / df_ml['creatinina']
+            df_ml['insuficiencia_renal'] = ((df_ml['ureia'] > 60) | (df_ml['creatinina'] > 2)).astype(int)
+        
+        if 'glicose' in df_ml.columns:
+            df_ml['diabetes'] = (df_ml['glicose'] > 150).astype(int)
+            df_ml['hipoglicemia'] = (df_ml['glicose'] < 60).astype(int)
+        
+        if 'leucocitos' in df_ml.columns:
+            df_ml['leucocitose'] = (df_ml['leucocitos'] > 12000).astype(int)
+            df_ml['leucopenia'] = (df_ml['leucocitos'] < 4000).astype(int)
+        
+        # Índices de função hepática
+        if all(col in df_ml.columns for col in ['alt', 'ast', 'fosfatase_alcalina']):
+            df_ml['indice_hepatico'] = (df_ml['alt'] + df_ml['ast']) / df_ml['fosfatase_alcalina']
+            df_ml['hepatite'] = ((df_ml['alt'] > 80) | (df_ml['ast'] > 80)).astype(int)
+        
+        # Índices de proteínas
+        if all(col in df_ml.columns for col in ['proteinas_totais', 'albumina']):
+            df_ml['indice_proteinas'] = df_ml['albumina'] / df_ml['proteinas_totais']
+            df_ml['hipoproteinemia'] = (df_ml['proteinas_totais'] < 5.5).astype(int)
     
-    # 4. Features de sintomas combinados
-    sintomas_cols = ['febre', 'apatia', 'perda_peso', 'vomito', 'diarreia', 'tosse', 'letargia']
+    # 4. Features de sintomas combinados avançados
+    sintomas_cols = ['febre', 'apatia', 'perda_peso', 'vomito', 'diarreia', 'tosse', 'letargia', 'feridas_cutaneas', 'poliuria', 'polidipsia']
     sintomas_disponiveis = [col for col in sintomas_cols if col in df_ml.columns]
     
     if len(sintomas_disponiveis) >= 2:
         df_ml['total_sintomas'] = df_ml[sintomas_disponiveis].sum(axis=1)
-        df_ml['severidade_sintomas'] = pd.cut(df_ml['total_sintomas'], bins=[-1, 0, 2, 4, 10], labels=['Assintomático', 'Leve', 'Moderado', 'Severo'])
+        df_ml['severidade_sintomas'] = pd.cut(df_ml['total_sintomas'], bins=[-1, 0, 1, 3, 5, 10], labels=['Assintomático', 'Leve', 'Moderado', 'Severo', 'Crítico'])
         df_ml['severidade_sintomas_encoded'] = LabelEncoder().fit_transform(df_ml['severidade_sintomas'])
+        
+        # Síndromes específicas
+        if all(col in df_ml.columns for col in ['febre', 'tosse']):
+            df_ml['sindrome_respiratoria'] = (df_ml['febre'] & df_ml['tosse']).astype(int)
+        
+        if all(col in df_ml.columns for col in ['vomito', 'diarreia']):
+            df_ml['sindrome_gastrointestinal'] = (df_ml['vomito'] | df_ml['diarreia']).astype(int)
+        
+        if all(col in df_ml.columns for col in ['poliuria', 'polidipsia']):
+            df_ml['sindrome_polidipsica'] = (df_ml['poliuria'] & df_ml['polidipsia']).astype(int)
+        
+        if all(col in df_ml.columns for col in ['apatia', 'perda_peso']):
+            df_ml['sindrome_sistemica'] = (df_ml['apatia'] & df_ml['perda_peso']).astype(int)
     
     # Selecionar features para ML
     feature_cols = []
@@ -632,52 +672,190 @@ elif pagina == "🤖 Predição de Diagnóstico":
     # Treinar múltiplos modelos
     st.subheader("🤖 Treinamento de Modelos")
     
-    from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+    from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, ExtraTreesClassifier, AdaBoostClassifier, BaggingClassifier
     from sklearn.linear_model import LogisticRegression
     from sklearn.svm import SVC
     from sklearn.neighbors import KNeighborsClassifier
-    from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+    from sklearn.tree import DecisionTreeClassifier
+    from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, f1_score, precision_score, recall_score
     import plotly.express as px
     import plotly.graph_objects as go
     
+    # Múltiplos modelos com hiperparâmetros otimizados
     models = {
-        'Random Forest': RandomForestClassifier(n_estimators=100, random_state=42),
-        'Gradient Boosting': GradientBoostingClassifier(random_state=42),
-        'Logistic Regression': LogisticRegression(random_state=42, max_iter=1000),
-        'SVM': SVC(random_state=42, probability=True),
-        'K-Nearest Neighbors': KNeighborsClassifier(n_neighbors=5)
+        'Random Forest': RandomForestClassifier(
+            n_estimators=200, 
+            max_depth=10, 
+            min_samples_split=5, 
+            min_samples_leaf=2,
+            random_state=42
+        ),
+        'Gradient Boosting': GradientBoostingClassifier(
+            n_estimators=200,
+            learning_rate=0.1,
+            max_depth=6,
+            random_state=42
+        ),
+        'Logistic Regression': LogisticRegression(
+            random_state=42, 
+            max_iter=2000,
+            C=1.0,
+            solver='lbfgs'
+        ),
+        'SVM Linear': SVC(
+            kernel='linear',
+            random_state=42, 
+            probability=True,
+            C=1.0
+        ),
+        'SVM RBF': SVC(
+            kernel='rbf',
+            random_state=42, 
+            probability=True,
+            C=1.0,
+            gamma='scale'
+        ),
+        'K-Nearest Neighbors': KNeighborsClassifier(
+            n_neighbors=7,
+            weights='distance',
+            metric='minkowski'
+        ),
+        'Decision Tree': DecisionTreeClassifier(
+            max_depth=10,
+            min_samples_split=10,
+            min_samples_leaf=5,
+            random_state=42
+        ),
+        'Extra Trees': ExtraTreesClassifier(
+            n_estimators=200,
+            max_depth=10,
+            min_samples_split=5,
+            random_state=42
+        ),
+        'AdaBoost': AdaBoostClassifier(
+            n_estimators=100,
+            learning_rate=0.5,
+            random_state=42
+        ),
+        'Bagging': BaggingClassifier(
+            n_estimators=100,
+            random_state=42
+        )
     }
     
     results = {}
     
-    for name, model in models.items():
-        with st.spinner(f"Treinando {name}..."):
+    # Progress bar para treinamento
+    progress_bar = st.progress(0)
+    status_text = st.empty()
+    
+    for i, (name, model) in enumerate(models.items()):
+        status_text.text(f"🔄 Treinando {name}... ({i+1}/{len(models)})")
+        
+        try:
+            # Treinar modelo
             model.fit(X_train_scaled, y_train)
             y_pred = model.predict(X_test_scaled)
+            
+            # Calcular métricas
             accuracy = accuracy_score(y_test, y_pred)
+            f1 = f1_score(y_test, y_pred, average='macro')
+            precision = precision_score(y_test, y_pred, average='macro')
+            recall = recall_score(y_test, y_pred, average='macro')
+            
+            # Validação cruzada
+            from sklearn.model_selection import cross_val_score
+            cv_scores = cross_val_score(model, X_train_scaled, y_train, cv=5, scoring='accuracy')
+            cv_mean = cv_scores.mean()
+            cv_std = cv_scores.std()
+            
             results[name] = {
                 'model': model,
                 'accuracy': accuracy,
+                'f1_score': f1,
+                'precision': precision,
+                'recall': recall,
+                'cv_mean': cv_mean,
+                'cv_std': cv_std,
                 'predictions': y_pred
             }
+            
+        except Exception as e:
+            st.error(f"❌ Erro ao treinar {name}: {str(e)}")
+            results[name] = {
+                'model': None,
+                'accuracy': 0,
+                'f1_score': 0,
+                'precision': 0,
+                'recall': 0,
+                'cv_mean': 0,
+                'cv_std': 0,
+                'predictions': None
+            }
+        
+        # Atualizar progress bar
+        progress_bar.progress((i + 1) / len(models))
+    
+    status_text.text("✅ Treinamento concluído!")
+    progress_bar.empty()
+    status_text.empty()
     
     # Mostrar resultados
-    st.subheader("📊 Resultados dos Modelos")
+    st.subheader("📊 Comparação Completa de Modelos")
     
-    # Tabela de resultados
-    results_df = pd.DataFrame({
-        'Modelo': list(results.keys()),
-        'Acurácia': [results[name]['accuracy'] for name in results.keys()]
-    }).sort_values('Acurácia', ascending=False)
+    # Tabela de resultados detalhada
+    results_data = []
+    for name in results.keys():
+        if results[name]['model'] is not None:
+            results_data.append({
+                'Modelo': name,
+                'Acurácia': f"{results[name]['accuracy']:.3f}",
+                'F1-Score': f"{results[name]['f1_score']:.3f}",
+                'Precision': f"{results[name]['precision']:.3f}",
+                'Recall': f"{results[name]['recall']:.3f}",
+                'CV Mean': f"{results[name]['cv_mean']:.3f}",
+                'CV Std': f"{results[name]['cv_std']:.3f}",
+                'Score Total': f"{results[name]['accuracy'] + results[name]['f1_score'] + results[name]['cv_mean']:.3f}"
+            })
     
-    st.dataframe(results_df, use_container_width=True)
+    results_df = pd.DataFrame(results_data)
+    
+    # Ordenar por score total (acurácia + f1 + cv_mean)
+    if not results_df.empty:
+        results_df = results_df.sort_values('Score Total', ascending=False)
+        
+        # Mostrar tabela com formatação
+        st.dataframe(results_df, use_container_width=True)
+        
+        # Gráfico de comparação
+        fig = px.bar(
+            results_df, 
+            x='Modelo', 
+            y=['Acurácia', 'F1-Score', 'CV Mean'],
+            title='Comparação de Performance dos Modelos',
+            barmode='group'
+        )
+        fig.update_layout(height=500)
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.error("❌ Nenhum modelo foi treinado com sucesso!")
+        st.stop()
     
     # Melhor modelo
     best_model_name = results_df.iloc[0]['Modelo']
     best_model = results[best_model_name]['model']
-    best_accuracy = results_df.iloc[0]['Acurácia']
+    best_accuracy = float(results_df.iloc[0]['Acurácia'])
+    best_score_total = float(results_df.iloc[0]['Score Total'])
     
-    st.success(f"🏆 **Melhor Modelo:** {best_model_name} com {best_accuracy:.3f} de acurácia")
+    st.success(f"🏆 **Melhor Modelo:** {best_model_name}")
+    st.info(f"📊 **Acurácia:** {best_accuracy:.3f} | **Score Total:** {best_score_total:.3f}")
+    
+    # Mostrar top 3 modelos
+    st.subheader("🥇 Top 3 Modelos")
+    top_3 = results_df.head(3)
+    for i, (_, row) in enumerate(top_3.iterrows(), 1):
+        medal = ["🥇", "🥈", "🥉"][i-1]
+        st.write(f"{medal} **{row['Modelo']}** - Acurácia: {row['Acurácia']} | Score: {row['Score Total']}")
     
     # Feature Importance (se disponível)
     if hasattr(best_model, 'feature_importances_'):
