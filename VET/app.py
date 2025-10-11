@@ -90,8 +90,24 @@ dataset_source = ""
 
 # 1. Tentar carregar dados reais da pasta data
 try:
-    data_path = Path("data")
-    if data_path.exists():
+    # Tentar múltiplos caminhos possíveis
+    possible_paths = [
+        Path("data"),           # Para execução local
+        Path("VET/data"),       # Para execução no Streamlit Cloud
+        Path(".") / "data",     # Caminho relativo
+        Path(".") / "VET" / "data"  # Caminho relativo com VET
+    ]
+    
+    data_path = None
+    for path in possible_paths:
+        if path.exists():
+            csv_files = list(path.glob("*.csv"))
+            if csv_files:
+                data_path = path
+                st.info(f"📁 Encontrada pasta de dados: {path}")
+                break
+    
+    if data_path and data_path.exists():
         csv_files = list(data_path.glob("*.csv"))
         if csv_files:
             # Priorizar datasets reais específicos
@@ -130,28 +146,42 @@ if df_real is not None and len(df_real) > 0:
     st.success(f"✅ Sistema inicializado com {len(df_real)} registros de {dataset_source}!")
 else:
     st.session_state.dados_prontos = False
-    st.error("❌ ERRO: Nenhum dataset real encontrado!")
-    st.error("📁 Verifique se existem arquivos CSV na pasta 'data/':")
-    
-    # Listar arquivos disponíveis
-    data_path = Path("data")
-    if data_path.exists():
-        csv_files = list(data_path.glob("*.csv"))
-        if csv_files:
-            st.info(f"📋 Arquivos encontrados na pasta data/:")
-            for file in csv_files:
-                st.write(f"  - {file.name}")
-        else:
-            st.warning("⚠️ Pasta 'data/' existe mas não contém arquivos CSV")
-    else:
-        st.warning("⚠️ Pasta 'data/' não encontrada")
-    
-    st.info("💡 Para usar o sistema, adicione datasets reais na pasta 'data/' com os seguintes nomes:")
-    st.write("- veterinary_complete_real_dataset.csv")
-    st.write("- veterinary_master_dataset.csv")
-    st.write("- veterinary_realistic_dataset.csv")
-    st.write("- clinical_veterinary_data.csv")
-    st.write("- laboratory_complete_panel.csv")
+            st.error("❌ ERRO: Nenhum dataset real encontrado!")
+            st.error("📁 Verifique se existem arquivos CSV nas seguintes pastas:")
+            
+            # Verificar todos os caminhos possíveis
+            possible_paths = [
+                Path("data"),           
+                Path("VET/data"),       
+                Path(".") / "data",     
+                Path(".") / "VET" / "data"  
+            ]
+            
+            found_files = False
+            for data_path in possible_paths:
+                if data_path.exists():
+                    csv_files = list(data_path.glob("*.csv"))
+                    if csv_files:
+                        st.info(f"📋 Arquivos encontrados na pasta {data_path}:")
+                        for file in csv_files:
+                            st.write(f"  - {file.name}")
+                        found_files = True
+                    else:
+                        st.warning(f"⚠️ Pasta '{data_path}' existe mas não contém arquivos CSV")
+                else:
+                    st.warning(f"⚠️ Pasta '{data_path}' não encontrada")
+            
+            if not found_files:
+                st.info("💡 Para usar o sistema, adicione datasets reais nas seguintes pastas com os seguintes nomes:")
+                st.write("📁 Caminhos possíveis:")
+                st.write("- data/")
+                st.write("- VET/data/")
+                st.write("📋 Arquivos necessários:")
+                st.write("- veterinary_complete_real_dataset.csv")
+                st.write("- veterinary_master_dataset.csv")
+                st.write("- veterinary_realistic_dataset.csv")
+                st.write("- clinical_veterinary_data.csv")
+                st.write("- laboratory_complete_panel.csv")
     
     st.stop()
 
