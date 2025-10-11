@@ -276,10 +276,8 @@ with st.sidebar:
         
         # Botão para forçar recarregamento
         if st.button("🔄 Recarregar Dataset", use_container_width=True):
-            # Limpar cache
-            carregar_dataset_fixo.clear()
-            # Recarregar
-            df_auto = carregar_dataset_fixo()
+            # Recarregar dados incorporados
+            df_auto = carregar_dados_incorporados()
             if df_auto is not None:
                 st.session_state.df_main = df_auto
                 st.success(f"✅ Dataset recarregado: {len(df_auto)} registros")
@@ -292,8 +290,7 @@ with st.sidebar:
         st.markdown("🔄 **Tentando carregar automaticamente...**")
         
         if st.button("📊 Forçar Carregamento", type="primary", use_container_width=True):
-            carregar_dataset_fixo.clear()
-            df_auto = carregar_dataset_fixo()
+            df_auto = carregar_dados_incorporados()
             if df_auto is not None:
                 st.session_state.df_main = df_auto
                 st.session_state.dataset_sempre_carregado = True
