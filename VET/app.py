@@ -109,25 +109,27 @@ def carregar_dataset_fixo():
         st.error(f"❌ Erro ao carregar dataset: {str(e)}")
         return None
 
-# Carregar dataset automaticamente sempre (com cache)
+# Carregar dataset automaticamente SEMPRE
 if st.session_state.df_main is None:
-    with st.spinner("🔄 Carregando dataset automaticamente..."):
-        df_auto = carregar_dataset_fixo()
-        if df_auto is not None:
-            st.session_state.df_main = df_auto
-            st.session_state.dataset_carregado_auto = True
-            st.session_state.dataset_sempre_carregado = True
-            # Não usar st.rerun() aqui para evitar loops infinitos
-        else:
-            st.error("❌ Não foi possível carregar dataset automaticamente")
+    # Carregar dados imediatamente sem spinner para melhor UX
+    df_auto = carregar_dataset_fixo()
+    if df_auto is not None:
+        st.session_state.df_main = df_auto
+        st.session_state.dataset_carregado_auto = True
+        st.session_state.dataset_sempre_carregado = True
+        st.session_state.dados_prontos = True
+    else:
+        st.session_state.dados_prontos = False
+        st.error("❌ Não foi possível carregar dataset automaticamente")
+else:
+    st.session_state.dados_prontos = True
 
-# Garantir que o dataset esteja sempre carregado
-if not st.session_state.get('dataset_sempre_carregado', False):
-    if st.session_state.df_main is None:
-        df_auto = carregar_dataset_fixo()
-        if df_auto is not None:
-            st.session_state.df_main = df_auto
-            st.session_state.dataset_sempre_carregado = True
+# Garantir que sempre temos dados
+if st.session_state.df_main is None:
+    df_auto = carregar_dataset_fixo()
+    if df_auto is not None:
+        st.session_state.df_main = df_auto
+        st.session_state.dados_prontos = True
 
 # Sidebar com informações
 with st.sidebar:

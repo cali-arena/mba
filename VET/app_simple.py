@@ -199,9 +199,13 @@ def gerar_dados_sinteticos():
     df = pd.DataFrame(data)
     return df
 
-# Carregar dados
-with st.spinner("🔄 Carregando dataset..."):
-    df = carregar_dataset_completo()
+# Carregar dados automaticamente SEMPRE
+df = carregar_dataset_completo()
+
+# Verificar se os dados foram carregados
+if df is None or len(df) == 0:
+    st.error("❌ Erro ao carregar dados. Recarregue a página.")
+    st.stop()
 
 # Sidebar
 with st.sidebar:
