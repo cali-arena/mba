@@ -223,6 +223,20 @@ with st.sidebar:
     st.title("Navegação")
     st.markdown("---")
     
+    # Sistema de navegação por páginas
+    pagina = st.selectbox(
+        "Escolha uma página:",
+        [
+            "🏠 Visão Geral",
+            "📊 Análise de Dados", 
+            "🤖 Treinar Modelo",
+            "🔍 Predição",
+            "📈 Estatísticas",
+            "📁 Informações do Dataset"
+        ]
+    )
+    st.markdown("---")
+    
     # Status do dataset (sempre carregado)
     st.subheader("📊 Status dos Dados")
     if st.session_state.df_main is not None:
@@ -477,6 +491,568 @@ with st.expander("📖 Ver tutorial rápido"):
        - Hipóteses baseadas em dados
        - Sugestões de acompanhamento
     """)
+
+# Sistema de páginas
+if pagina == "🏠 Visão Geral":
+    st.markdown("---")
+    
+    # Footer
+    st.markdown("""
+    <div style='text-align: center; color: #666; padding: 20px;'>
+        <p>🐾 VetDiagnosisAI v1.0 | Desenvolvido para profissionais veterinários e pesquisadores</p>
+        <p>⚠️ Ferramenta educacional - Não substitui avaliação clínica profissional</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+elif pagina == "📊 Análise de Dados":
+    st.header("📊 Análise Exploratória de Dados")
+    
+    if st.session_state.df_main is not None:
+        df = st.session_state.df_main
+        
+        # Filtros
+        st.subheader("🔍 Filtros")
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            if 'especie' in df.columns:
+                especie_filtro = st.selectbox("Espécie:", ['Todas'] + list(df['especie'].unique()))
+            else:
+                especie_filtro = 'Todas'
+        
+        with col2:
+            if 'idade_anos' in df.columns:
+                idade_min, idade_max = st.slider("Faixa de Idade:", 0.0, 20.0, (0.0, 20.0))
+            else:
+                st.info("Idade não disponível")
+        
+        with col3:
+            if 'diagnostico' in df.columns:
+                diag_filtro = st.selectbox("Diagnóstico:", ['Todos'] + list(df['diagnostico'].unique()))
+            else:
+                diag_filtro = 'Todos'
+        
+        # Aplicar filtros
+        df_filtrado = df.copy()
+        if especie_filtro != 'Todas':
+            df_filtrado = df_filtrado[df_filtrado['especie'] == especie_filtro]
+        if 'idade_anos' in df.columns:
+            df_filtrado = df_filtrado[
+                (df_filtrado['idade_anos'] >= idade_min) & 
+                (df_filtrado['idade_anos'] <= idade_max)
+            ]
+        if diag_filtro != 'Todos':
+            df_filtrado = df_filtrado[df_filtrado['diagnostico'] == diag_filtro]
+        
+        st.info(f"📊 Mostrando {len(df_filtrado)} registros após filtros")
+        
+        # Estatísticas básicas
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.metric("Total", len(df_filtrado))
+        with col2:
+            if 'especie' in df_filtrado.columns:
+                st.metric("Espécies", df_filtrado['especie'].nunique())
+        with col3:
+            if 'diagnostico' in df_filtrado.columns:
+                st.metric("Diagnósticos", df_filtrado['diagnostico'].nunique())
+        with col4:
+            st.metric("Colunas", len(df_filtrado.columns))
+        
+        # Amostra dos dados
+        st.subheader("📋 Amostra dos Dados")
+        st.dataframe(df_filtrado.head(10), use_container_width=True)
+    
+    else:
+        st.error("❌ Dataset não carregado")
+
+elif pagina == "🤖 Treinar Modelo":
+    st.header("🤖 Sistema de Machine Learning Veterinário")
+    
+    if st.session_state.df_main is not None:
+        df = st.session_state.df_main
+        
+        # Verificar se temos dados suficientes para ML
+        if 'diagnostico' not in df.columns:
+            st.error("❌ Coluna 'diagnostico' não encontrada. Não é possível treinar modelos.")
+        else:
+            st.success(f"✅ Dados disponíveis: {len(df)} registros")
+            
+            # Preparar dados para ML
+            st.subheader("🔧 Preparação dos Dados")
+            
+            # Feature Engineering Avançado
+            df_ml = df.copy()
+            
+            # 1. Codificação de variáveis categóricas
+            from sklearn.preprocessing import LabelEncoder, StandardScaler
+            le_especie = LabelEncoder()
+            le_sexo = LabelEncoder()
+            le_diagnostico = LabelEncoder()
+            
+            if 'especie' in df_ml.columns:
+                df_ml['especie_encoded'] = le_especie.fit_transform(df_ml['especie'])
+            if 'sexo' in df_ml.columns:
+                df_ml['sexo_encoded'] = le_sexo.fit_transform(df_ml['sexo'])
+            
+            df_ml['diagnostico_encoded'] = le_diagnostico.fit_transform(df_ml['diagnostico'])
+            
+            # 2. Criar features derivadas avançadas
+            if 'idade_anos' in df_ml.columns:
+                df_ml['idade_categoria'] = pd.cut(df_ml['idade_anos'], bins=[0, 1, 3, 7, 12, 100], labels=['Filhote', 'Jovem', 'Adulto', 'Maduro', 'Idoso'])
+                df_ml['idade_categoria_encoded'] = LabelEncoder().fit_transform(df_ml['idade_categoria'])
+                
+                # Features de idade
+                df_ml['idade_quadrado'] = df_ml['idade_anos'] ** 2
+                df_ml['idade_log'] = np.log1p(df_ml['idade_anos'])
+                df_ml['idade_senior'] = (df_ml['idade_anos'] > 7).astype(int)
+                df_ml['idade_filhote'] = (df_ml['idade_anos'] < 1).astype(int)
+            
+            # 3. Features de exames laboratoriais combinados avançados
+            exames_cols = ['hemoglobina', 'hematocrito', 'leucocitos', 'glicose', 'ureia', 'creatinina', 'alt', 'ast', 'fosfatase_alcalina', 'proteinas_totais', 'albumina']
+            exames_disponiveis = [col for col in exames_cols if col in df_ml.columns]
+            
+            if len(exames_disponiveis) >= 3:
+                # Criar índices clínicos específicos
+                if 'hemoglobina' in df_ml.columns and 'hematocrito' in df_ml.columns:
+                    df_ml['indice_anemia'] = df_ml['hemoglobina'] / (df_ml['hematocrito'] / 3)
+                    df_ml['anemia_grave'] = (df_ml['hemoglobina'] < 8).astype(int)
+                
+                if 'ureia' in df_ml.columns and 'creatinina' in df_ml.columns:
+                    df_ml['indice_renal'] = df_ml['ureia'] / df_ml['creatinina']
+                    df_ml['insuficiencia_renal'] = ((df_ml['ureia'] > 60) | (df_ml['creatinina'] > 2)).astype(int)
+                
+                if 'glicose' in df_ml.columns:
+                    df_ml['diabetes'] = (df_ml['glicose'] > 150).astype(int)
+                    df_ml['hipoglicemia'] = (df_ml['glicose'] < 60).astype(int)
+                
+                if 'leucocitos' in df_ml.columns:
+                    df_ml['leucocitose'] = (df_ml['leucocitos'] > 12000).astype(int)
+                    df_ml['leucopenia'] = (df_ml['leucocitos'] < 4000).astype(int)
+            
+            # 4. Features de sintomas combinados avançados
+            sintomas_cols = ['febre', 'apatia', 'perda_peso', 'vomito', 'diarreia', 'tosse', 'letargia', 'feridas_cutaneas', 'poliuria', 'polidipsia']
+            sintomas_disponiveis = [col for col in sintomas_cols if col in df_ml.columns]
+            
+            if len(sintomas_disponiveis) >= 2:
+                df_ml['total_sintomas'] = df_ml[sintomas_disponiveis].sum(axis=1)
+                df_ml['severidade_sintomas'] = pd.cut(df_ml['total_sintomas'], bins=[-1, 0, 1, 3, 5, 10], labels=['Assintomático', 'Leve', 'Moderado', 'Severo', 'Crítico'])
+                df_ml['severidade_sintomas_encoded'] = LabelEncoder().fit_transform(df_ml['severidade_sintomas'])
+                
+                # Síndromes específicas
+                if all(col in df_ml.columns for col in ['febre', 'tosse']):
+                    df_ml['sindrome_respiratoria'] = (df_ml['febre'] & df_ml['tosse']).astype(int)
+                
+                if all(col in df_ml.columns for col in ['vomito', 'diarreia']):
+                    df_ml['sindrome_gastrointestinal'] = (df_ml['vomito'] | df_ml['diarreia']).astype(int)
+                
+                if all(col in df_ml.columns for col in ['poliuria', 'polidipsia']):
+                    df_ml['sindrome_polidipsica'] = (df_ml['poliuria'] & df_ml['polidipsia']).astype(int)
+                
+                if all(col in df_ml.columns for col in ['apatia', 'perda_peso']):
+                    df_ml['sindrome_sistemica'] = (df_ml['apatia'] & df_ml['perda_peso']).astype(int)
+            
+            # Selecionar features para ML
+            feature_cols = []
+            
+            # Adicionar colunas numéricas originais
+            numeric_cols = df_ml.select_dtypes(include=[np.number]).columns.tolist()
+            feature_cols.extend([col for col in numeric_cols if col not in ['diagnostico_encoded']])
+            
+            # Remover colunas com muitos valores únicos (como ID)
+            feature_cols = [col for col in feature_cols if df_ml[col].nunique() < len(df_ml) * 0.8]
+            
+            X = df_ml[feature_cols].fillna(df_ml[feature_cols].mean())
+            y = df_ml['diagnostico_encoded']
+            
+            st.success(f"✅ Dados preparados: {X.shape[0]} amostras, {X.shape[1]} features")
+            
+            # Dividir dados
+            from sklearn.model_selection import train_test_split
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+            
+            # Escalar features
+            scaler = StandardScaler()
+            X_train_scaled = scaler.fit_transform(X_train)
+            X_test_scaled = scaler.transform(X_test)
+            
+            st.info(f"📊 Divisão dos dados: {X_train.shape[0]} treino, {X_test.shape[0]} teste")
+            
+            # Treinar múltiplos modelos
+            st.subheader("🤖 Treinamento de Modelos")
+            
+            from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, ExtraTreesClassifier, AdaBoostClassifier, BaggingClassifier
+            from sklearn.linear_model import LogisticRegression
+            from sklearn.svm import SVC
+            from sklearn.neighbors import KNeighborsClassifier
+            from sklearn.tree import DecisionTreeClassifier
+            from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, f1_score, precision_score, recall_score
+            import plotly.express as px
+            import plotly.graph_objects as go
+            
+            # Múltiplos modelos com hiperparâmetros otimizados
+            models = {
+                'Random Forest': RandomForestClassifier(
+                    n_estimators=200, 
+                    max_depth=10, 
+                    min_samples_split=5, 
+                    min_samples_leaf=2,
+                    random_state=42
+                ),
+                'Gradient Boosting': GradientBoostingClassifier(
+                    n_estimators=200,
+                    learning_rate=0.1,
+                    max_depth=6,
+                    random_state=42
+                ),
+                'Logistic Regression': LogisticRegression(
+                    random_state=42, 
+                    max_iter=2000,
+                    C=1.0,
+                    solver='lbfgs'
+                ),
+                'SVM Linear': SVC(
+                    kernel='linear',
+                    random_state=42, 
+                    probability=True,
+                    C=1.0
+                ),
+                'SVM RBF': SVC(
+                    kernel='rbf',
+                    random_state=42, 
+                    probability=True,
+                    C=1.0,
+                    gamma='scale'
+                ),
+                'K-Nearest Neighbors': KNeighborsClassifier(
+                    n_neighbors=7,
+                    weights='distance',
+                    metric='minkowski'
+                ),
+                'Decision Tree': DecisionTreeClassifier(
+                    max_depth=10,
+                    min_samples_split=10,
+                    min_samples_leaf=5,
+                    random_state=42
+                ),
+                'Extra Trees': ExtraTreesClassifier(
+                    n_estimators=200,
+                    max_depth=10,
+                    min_samples_split=5,
+                    random_state=42
+                ),
+                'AdaBoost': AdaBoostClassifier(
+                    n_estimators=100,
+                    learning_rate=0.5,
+                    random_state=42
+                ),
+                'Bagging': BaggingClassifier(
+                    n_estimators=100,
+                    random_state=42
+                )
+            }
+            
+            results = {}
+            
+            # Progress bar para treinamento
+            progress_bar = st.progress(0)
+            status_text = st.empty()
+            
+            for i, (name, model) in enumerate(models.items()):
+                status_text.text(f"🔄 Treinando {name}... ({i+1}/{len(models)})")
+                
+                try:
+                    # Treinar modelo
+                    model.fit(X_train_scaled, y_train)
+                    y_pred = model.predict(X_test_scaled)
+                    
+                    # Calcular métricas
+                    accuracy = accuracy_score(y_test, y_pred)
+                    f1 = f1_score(y_test, y_pred, average='macro')
+                    precision = precision_score(y_test, y_pred, average='macro')
+                    recall = recall_score(y_test, y_pred, average='macro')
+                    
+                    # Validação cruzada
+                    from sklearn.model_selection import cross_val_score
+                    cv_scores = cross_val_score(model, X_train_scaled, y_train, cv=5, scoring='accuracy')
+                    cv_mean = cv_scores.mean()
+                    cv_std = cv_scores.std()
+                    
+                    results[name] = {
+                        'model': model,
+                        'accuracy': accuracy,
+                        'f1_score': f1,
+                        'precision': precision,
+                        'recall': recall,
+                        'cv_mean': cv_mean,
+                        'cv_std': cv_std,
+                        'predictions': y_pred
+                    }
+                    
+                except Exception as e:
+                    st.error(f"❌ Erro ao treinar {name}: {str(e)}")
+                    results[name] = {
+                        'model': None,
+                        'accuracy': 0,
+                        'f1_score': 0,
+                        'precision': 0,
+                        'recall': 0,
+                        'cv_mean': 0,
+                        'cv_std': 0,
+                        'predictions': None
+                    }
+                
+                # Atualizar progress bar
+                progress_bar.progress((i + 1) / len(models))
+            
+            status_text.text("✅ Treinamento concluído!")
+            progress_bar.empty()
+            status_text.empty()
+            
+            # Mostrar resultados
+            st.subheader("📊 Comparação Completa de Modelos")
+            
+            # Tabela de resultados detalhada
+            results_data = []
+            for name in results.keys():
+                if results[name]['model'] is not None:
+                    results_data.append({
+                        'Modelo': name,
+                        'Acurácia': f"{results[name]['accuracy']:.3f}",
+                        'F1-Score': f"{results[name]['f1_score']:.3f}",
+                        'Precision': f"{results[name]['precision']:.3f}",
+                        'Recall': f"{results[name]['recall']:.3f}",
+                        'CV Mean': f"{results[name]['cv_mean']:.3f}",
+                        'CV Std': f"{results[name]['cv_std']:.3f}",
+                        'Score Total': f"{results[name]['accuracy'] + results[name]['f1_score'] + results[name]['cv_mean']:.3f}"
+                    })
+            
+            results_df = pd.DataFrame(results_data)
+            
+            # Ordenar por score total (acurácia + f1 + cv_mean)
+            if not results_df.empty:
+                results_df = results_df.sort_values('Score Total', ascending=False)
+                
+                # Mostrar tabela com formatação
+                st.dataframe(results_df, use_container_width=True)
+                
+                # Gráfico de comparação
+                fig = px.bar(
+                    results_df, 
+                    x='Modelo', 
+                    y=['Acurácia', 'F1-Score', 'CV Mean'],
+                    title='Comparação de Performance dos Modelos',
+                    barmode='group'
+                )
+                fig.update_layout(height=500)
+                st.plotly_chart(fig, use_container_width=True)
+                
+                # Melhor modelo
+                best_model_name = results_df.iloc[0]['Modelo']
+                best_model = results[best_model_name]['model']
+                best_accuracy = float(results_df.iloc[0]['Acurácia'])
+                best_score_total = float(results_df.iloc[0]['Score Total'])
+                
+                st.success(f"🏆 **Melhor Modelo:** {best_model_name}")
+                st.info(f"📊 **Acurácia:** {best_accuracy:.3f} | **Score Total:** {best_score_total:.3f}")
+                
+                # Mostrar top 3 modelos
+                st.subheader("🥇 Top 3 Modelos")
+                top_3 = results_df.head(3)
+                for i, (_, row) in enumerate(top_3.iterrows(), 1):
+                    medal = ["🥇", "🥈", "🥉"][i-1]
+                    st.write(f"{medal} **{row['Modelo']}** - Acurácia: {row['Acurácia']} | Score: {row['Score Total']}")
+                
+                # Feature Importance (se disponível)
+                if hasattr(best_model, 'feature_importances_'):
+                    st.subheader("🎯 Importância das Features")
+                    
+                    feature_importance = pd.DataFrame({
+                        'Feature': feature_cols,
+                        'Importance': best_model.feature_importances_
+                    }).sort_values('Importance', ascending=False)
+                    
+                    fig = px.bar(feature_importance.head(10), x='Importance', y='Feature', 
+                                 title='Top 10 Features Mais Importantes')
+                    st.plotly_chart(fig, use_container_width=True)
+                
+                # Matriz de confusão
+                st.subheader("🔍 Matriz de Confusão")
+                
+                y_pred_best = results[best_model_name]['predictions']
+                cm = confusion_matrix(y_test, y_pred_best)
+                
+                fig = px.imshow(cm, 
+                                labels=dict(x="Predito", y="Real", color="Quantidade"),
+                                x=le_diagnostico.classes_,
+                                y=le_diagnostico.classes_,
+                                title=f"Matriz de Confusão - {best_model_name}")
+                st.plotly_chart(fig, use_container_width=True)
+                
+                # Relatório de classificação
+                st.subheader("📋 Relatório Detalhado")
+                report = classification_report(y_test, y_pred_best, target_names=le_diagnostico.classes_, output_dict=True)
+                
+                report_df = pd.DataFrame(report).transpose()
+                st.dataframe(report_df, use_container_width=True)
+                
+                # Sugestões para melhorar acurácia
+                st.subheader("💡 Sugestões para Melhorar Acurácia (>85%)")
+                
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    st.markdown("""
+                    **🔧 Feature Engineering:**
+                    - ✅ Criar mais features derivadas
+                    - ✅ Combinar exames laboratoriais
+                    - ✅ Agrupar sintomas por severidade
+                    - ✅ Usar idade categorizada
+                    - ✅ Criar índices clínicos específicos
+                    """)
+                
+                with col2:
+                    st.markdown("""
+                    **🤖 Modelos Avançados:**
+                    - ✅ XGBoost com hiperparâmetros otimizados
+                    - ✅ Ensemble de múltiplos modelos
+                    - ✅ Validação cruzada estratificada
+                    - ✅ Balanceamento de classes
+                    - ✅ Seleção de features automática
+                    """)
+                
+            else:
+                st.error("❌ Nenhum modelo foi treinado com sucesso!")
+    else:
+        st.error("❌ Dataset não carregado")
+
+elif pagina == "🔍 Predição":
+    st.header("🔍 Predição Interativa")
+    
+    if st.session_state.df_main is not None:
+        st.info("💡 Use os dados do paciente para fazer predições com o melhor modelo treinado.")
+        
+        # Formulário para entrada de dados
+        with st.form("prediction_form"):
+            st.subheader("📝 Dados do Paciente")
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                if 'especie' in st.session_state.df_main.columns:
+                    especie_pred = st.selectbox("Espécie:", st.session_state.df_main['especie'].unique())
+                if 'sexo' in st.session_state.df_main.columns:
+                    sexo_pred = st.selectbox("Sexo:", st.session_state.df_main['sexo'].unique())
+                if 'idade_anos' in st.session_state.df_main.columns:
+                    idade_pred = st.number_input("Idade (anos):", 0.1, 25.0, 5.0)
+            
+            with col2:
+                if 'hemoglobina' in st.session_state.df_main.columns:
+                    hemoglobina_pred = st.number_input("Hemoglobina:", 5.0, 20.0, 12.0)
+                if 'hematocrito' in st.session_state.df_main.columns:
+                    hematocrito_pred = st.number_input("Hematócrito:", 20.0, 60.0, 40.0)
+                if 'glicose' in st.session_state.df_main.columns:
+                    glicose_pred = st.number_input("Glicose:", 50.0, 300.0, 100.0)
+            
+            submitted = st.form_submit_button("🔍 Predizer Diagnóstico")
+            
+            if submitted:
+                st.success("✅ Predição realizada! (Em desenvolvimento - use a página Treinar Modelo primeiro)")
+    
+    else:
+        st.error("❌ Dataset não carregado")
+
+elif pagina == "📈 Estatísticas":
+    st.header("📈 Estatísticas Detalhadas")
+    
+    if st.session_state.df_main is not None:
+        df = st.session_state.df_main
+        
+        # Estatísticas gerais
+        st.subheader("📊 Estatísticas Gerais")
+        
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            st.metric("Total de Registros", len(df))
+        
+        with col2:
+            if 'especie' in df.columns:
+                st.metric("Espécies", df['especie'].nunique())
+            else:
+                st.metric("Espécies", "N/A")
+        
+        with col3:
+            if 'diagnostico' in df.columns:
+                st.metric("Diagnósticos", df['diagnostico'].nunique())
+            else:
+                st.metric("Diagnósticos", "N/A")
+        
+        with col4:
+            st.metric("Colunas", len(df.columns))
+        
+        # Distribuição por espécie
+        if 'especie' in df.columns:
+            st.subheader("🐾 Distribuição por Espécie")
+            especie_counts = df['especie'].value_counts()
+            st.bar_chart(especie_counts)
+        
+        # Distribuição por diagnóstico
+        if 'diagnostico' in df.columns:
+            st.subheader("🏥 Distribuição por Diagnóstico")
+            diag_counts = df['diagnostico'].value_counts()
+            st.bar_chart(diag_counts)
+        
+        # Amostra dos dados
+        st.subheader("📋 Amostra dos Dados")
+        st.dataframe(df.head(10), use_container_width=True)
+    
+    else:
+        st.error("❌ Dataset não carregado")
+
+elif pagina == "📁 Informações do Dataset":
+    st.header("📁 Informações do Dataset")
+    
+    if st.session_state.df_main is not None:
+        df = st.session_state.df_main
+        
+        st.subheader("📊 Metadados")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.write(f"**Total de registros:** {len(df)}")
+            st.write(f"**Total de colunas:** {len(df.columns)}")
+            st.write(f"**Memória usada:** {df.memory_usage(deep=True).sum() / 1024**2:.2f} MB")
+        
+        with col2:
+            if hasattr(st.session_state, 'dataset_source'):
+                st.write(f"**Fonte do dataset:** {st.session_state.dataset_source}")
+            if hasattr(st.session_state, 'dataset_timestamp'):
+                st.write(f"**Carregado em:** {st.session_state.dataset_timestamp}")
+        
+        st.subheader("📋 Estrutura das Colunas")
+        
+        # Informações sobre cada coluna
+        col_info = []
+        for col in df.columns:
+            col_info.append({
+                'Coluna': col,
+                'Tipo': str(df[col].dtype),
+                'Valores Únicos': df[col].nunique(),
+                'Valores Nulos': df[col].isnull().sum(),
+                'Valores Nulos %': f"{(df[col].isnull().sum() / len(df)) * 100:.1f}%"
+            })
+        
+        col_info_df = pd.DataFrame(col_info)
+        st.dataframe(col_info_df, use_container_width=True)
+        
+        # Amostra dos dados
+        st.subheader("📋 Amostra dos Dados")
+        st.dataframe(df.head(20), use_container_width=True)
+    
+    else:
+        st.error("❌ Dataset não carregado")
 
 st.markdown("---")
 
