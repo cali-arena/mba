@@ -77,44 +77,145 @@ def carregar_dados_incorporados():
         import pandas as pd
         import numpy as np
         
-        # Dados reais do veterinary_complete_real_dataset.csv (800 registros)
+        # Dados veterinários realistas com padrões clínicos corretos (800 registros)
+        np.random.seed(42)  # Para resultados consistentes
+        
+        # Criar dados com padrões clínicos realistas
+        n_samples = 800
         dados_reais = {
-            'id': [f'VET{i:04d}' for i in range(1, 801)],
-            'especie': ['Canina'] * 400 + ['Felina'] * 400,
+            'id': [f'VET{i:04d}' for i in range(1, n_samples + 1)],
+            'especie': ['Cão'] * 400 + ['Gato'] * 400,
             'raca': ['SRD', 'Labrador', 'Pastor', 'Poodle', 'Persa', 'Siames', 'Maine Coon'] * 114 + ['SRD'] * 2,
-            'idade_anos': np.random.uniform(1, 20, 800).round(1),
-            'sexo': np.random.choice(['M', 'F'], 800),
-            'hemoglobina': np.random.normal(12, 2, 800).round(1),
-            'hematocrito': np.random.normal(40, 5, 800).round(1),
-            'leucocitos': np.random.normal(8000, 2000, 800).round(0),
-            'plaquetas': np.random.normal(300, 100, 800).round(0),
-            'glicose': np.random.normal(100, 20, 800).round(1),
-            'ureia': np.random.normal(30, 10, 800).round(1),
-            'creatinina': np.random.normal(1.2, 0.3, 800).round(2),
-            'alt': np.random.normal(40, 15, 800).round(1),
-            'ast': np.random.normal(30, 10, 800).round(1),
-            'fosfatase_alcalina': np.random.normal(80, 30, 800).round(1),
-            'proteinas_totais': np.random.normal(7, 1, 800).round(2),
-            'albumina': np.random.normal(3.5, 0.5, 800).round(2),
-            'colesterol': np.random.normal(200, 50, 800).round(1),
-            'triglicerideos': np.random.normal(100, 30, 800).round(1),
-            'eosinofilos': np.random.normal(2, 1, 800).round(1),
-            'febre': np.random.choice([0, 1], 800, p=[0.7, 0.3]),
-            'apatia': np.random.choice([0, 1], 800, p=[0.6, 0.4]),
-            'perda_peso': np.random.choice([0, 1], 800, p=[0.8, 0.2]),
-            'vomito': np.random.choice([0, 1], 800, p=[0.7, 0.3]),
-            'diarreia': np.random.choice([0, 1], 800, p=[0.8, 0.2]),
-            'tosse': np.random.choice([0, 1], 800, p=[0.9, 0.1]),
-            'letargia': np.random.choice([0, 1], 800, p=[0.85, 0.15]),
-            'feridas_cutaneas': np.random.choice([0, 1], 800, p=[0.9, 0.1]),
-            'poliuria': np.random.choice([0, 1], 800, p=[0.9, 0.1]),
-            'polidipsia': np.random.choice([0, 1], 800, p=[0.9, 0.1]),
-            'diagnostico': np.random.choice([
-                'Normal', 'Diabetes Mellitus', 'Insuficiência Renal', 'Dermatite',
-                'Infecção Respiratória', 'Doença Periodontal', 'Artrose', 'Hepatite',
-                'Anemia', 'Hipertireoidismo', 'Cardiomiopatia', 'Pancreatite'
-            ], 800)
+            'idade_anos': np.random.uniform(1, 20, n_samples).round(1),
+            'sexo': np.random.choice(['M', 'F'], n_samples),
         }
+        
+        # Valores laboratoriais base com padrões clínicos
+        # Normal
+        normal_mask = np.random.choice([0, 1], n_samples, p=[0.3, 0.7])
+        
+        # Diabetes (alta glicose, poliuria, polidipsia)
+        diabetes_mask = np.random.choice([0, 1], n_samples, p=[0.85, 0.15])
+        
+        # Insuficiência Renal (alta ureia, creatinina)
+        renal_mask = np.random.choice([0, 1], n_samples, p=[0.9, 0.1])
+        
+        # Anemia (baixa hemoglobina, hematocrito)
+        anemia_mask = np.random.choice([0, 1], n_samples, p=[0.9, 0.1])
+        
+        # Hepatite (alta ALT, AST)
+        hepatic_mask = np.random.choice([0, 1], n_samples, p=[0.95, 0.05])
+        
+        # Infecção (alta leucocitos, febre)
+        infeccao_mask = np.random.choice([0, 1], n_samples, p=[0.8, 0.2])
+        
+        # Gerar valores laboratoriais com padrões clínicos
+        hemoglobina = np.where(anemia_mask, 
+                              np.random.normal(8, 1.5, n_samples),  # Anemia: baixa
+                              np.random.normal(13, 2, n_samples))   # Normal
+        
+        hematocrito = np.where(anemia_mask,
+                              np.random.normal(25, 5, n_samples),   # Anemia: baixo
+                              np.random.normal(42, 5, n_samples))   # Normal
+        
+        glicose = np.where(diabetes_mask,
+                          np.random.normal(180, 30, n_samples),     # Diabetes: alta
+                          np.random.normal(95, 15, n_samples))      # Normal
+        
+        ureia = np.where(renal_mask,
+                        np.random.normal(80, 20, n_samples),        # Renal: alta
+                        np.random.normal(25, 8, n_samples))         # Normal
+        
+        creatinina = np.where(renal_mask,
+                             np.random.normal(3.5, 1, n_samples),   # Renal: alta
+                             np.random.normal(1.0, 0.3, n_samples)) # Normal
+        
+        alt = np.where(hepatic_mask,
+                      np.random.normal(120, 40, n_samples),         # Hepática: alta
+                      np.random.normal(35, 12, n_samples))          # Normal
+        
+        ast = np.where(hepatic_mask,
+                      np.random.normal(80, 25, n_samples),          # Hepática: alta
+                      np.random.normal(25, 8, n_samples))           # Normal
+        
+        leucocitos = np.where(infeccao_mask,
+                             np.random.normal(15000, 3000, n_samples), # Infecção: alta
+                             np.random.normal(7500, 1500, n_samples))  # Normal
+        
+        # Adicionar valores laboratoriais
+        dados_reais.update({
+            'hemoglobina': np.clip(hemoglobina, 5, 20).round(1),
+            'hematocrito': np.clip(hematocrito, 15, 55).round(1),
+            'leucocitos': np.clip(leucocitos, 3000, 25000).round(0),
+            'plaquetas': np.random.normal(300, 100, n_samples).round(0),
+            'glicose': np.clip(glicose, 50, 300).round(1),
+            'ureia': np.clip(ureia, 10, 150).round(1),
+            'creatinina': np.clip(creatinina, 0.5, 8).round(2),
+            'alt': np.clip(alt, 10, 300).round(1),
+            'ast': np.clip(ast, 10, 200).round(1),
+            'fosfatase_alcalina': np.random.normal(80, 30, n_samples).round(1),
+            'proteinas_totais': np.random.normal(7, 1, n_samples).round(2),
+            'albumina': np.random.normal(3.5, 0.5, n_samples).round(2),
+            'colesterol': np.random.normal(200, 50, n_samples).round(1),
+            'triglicerideos': np.random.normal(100, 30, n_samples).round(1),
+            'eosinofilos': np.random.normal(2, 1, n_samples).round(1),
+        })
+        
+        # Sintomas baseados em padrões clínicos
+        febre = np.where(infeccao_mask,
+                        np.random.choice([0, 1], n_samples, p=[0.3, 0.7]),  # Infecção: mais febre
+                        np.random.choice([0, 1], n_samples, p=[0.8, 0.2]))  # Normal: menos febre
+        
+        poliuria = np.where(diabetes_mask,
+                           np.random.choice([0, 1], n_samples, p=[0.2, 0.8]),  # Diabetes: mais poliuria
+                           np.random.choice([0, 1], n_samples, p=[0.9, 0.1]))  # Normal: menos poliuria
+        
+        polidipsia = np.where(diabetes_mask,
+                             np.random.choice([0, 1], n_samples, p=[0.1, 0.9]),  # Diabetes: mais polidipsia
+                             np.random.choice([0, 1], n_samples, p=[0.95, 0.05])) # Normal: menos polidipsia
+        
+        # Adicionar sintomas
+        dados_reais.update({
+            'febre': febre,
+            'apatia': np.where(anemia_mask | renal_mask,
+                              np.random.choice([0, 1], n_samples, p=[0.4, 0.6]),
+                              np.random.choice([0, 1], n_samples, p=[0.7, 0.3])),
+            'perda_peso': np.where(diabetes_mask | renal_mask,
+                                  np.random.choice([0, 1], n_samples, p=[0.3, 0.7]),
+                                  np.random.choice([0, 1], n_samples, p=[0.8, 0.2])),
+            'vomito': np.random.choice([0, 1], n_samples, p=[0.7, 0.3]),
+            'diarreia': np.random.choice([0, 1], n_samples, p=[0.8, 0.2]),
+            'tosse': np.random.choice([0, 1], n_samples, p=[0.9, 0.1]),
+            'letargia': np.where(anemia_mask | renal_mask,
+                                np.random.choice([0, 1], n_samples, p=[0.3, 0.7]),
+                                np.random.choice([0, 1], n_samples, p=[0.8, 0.2])),
+            'feridas_cutaneas': np.random.choice([0, 1], n_samples, p=[0.9, 0.1]),
+            'poliuria': poliuria,
+            'polidipsia': polidipsia,
+        })
+        
+        # Diagnósticos baseados nos padrões clínicos
+        diagnostico = []
+        for i in range(n_samples):
+            if diabetes_mask[i] and poliuria[i] and polidipsia[i]:
+                diagnostico.append('Diabetes Mellitus')
+            elif renal_mask[i] and (ureia[i] > 60 or creatinina[i] > 2):
+                diagnostico.append('Insuficiência Renal')
+            elif anemia_mask[i] and hemoglobina[i] < 10:
+                diagnostico.append('Anemia')
+            elif hepatic_mask[i] and (alt[i] > 80 or ast[i] > 60):
+                diagnostico.append('Hepatite')
+            elif infeccao_mask[i] and febre[i] and leucocitos[i] > 12000:
+                diagnostico.append('Infecção Respiratória')
+            elif normal_mask[i]:
+                diagnostico.append('Normal')
+            else:
+                diagnostico.append(np.random.choice([
+                    'Dermatite', 'Doença Periodontal', 'Artrose', 
+                    'Hipertireoidismo', 'Cardiomiopatia', 'Pancreatite'
+                ]))
+        
+        dados_reais['diagnostico'] = diagnostico
         
         df = pd.DataFrame(dados_reais)
         
@@ -248,8 +349,8 @@ if df_real is None or len(df_real) == 0:
 if df_real is not None and len(df_real) > 0:
     # SEMPRE definir os dados no session state
     st.session_state.df_main = df_real
-    st.session_state.dataset_carregado_auto = True
-    st.session_state.dataset_sempre_carregado = True
+            st.session_state.dataset_carregado_auto = True
+            st.session_state.dataset_sempre_carregado = True
     st.session_state.dados_prontos = True
     st.session_state.dataset_source = dataset_source
     
@@ -258,7 +359,7 @@ if df_real is not None and len(df_real) > 0:
     st.session_state.dataset_timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     st.success(f"✅ Sistema inicializado com {len(df_real)} registros de {dataset_source}!")
-else:
+        else:
     st.session_state.dados_prontos = False
     st.error("❌ Erro crítico: Não foi possível inicializar o sistema!")
 
