@@ -266,10 +266,16 @@ if pagina == "🏠 Visão Geral":
         st.metric("📊 Total de Registros", len(df))
     
     with col2:
-        st.metric("🐾 Espécies Únicas", df['especie'].nunique())
+        if 'especie' in df.columns:
+            st.metric("🐾 Espécies Únicas", df['especie'].nunique())
+        else:
+            st.metric("🐾 Espécies Únicas", "N/A")
     
     with col3:
-        st.metric("🏥 Diagnósticos Únicos", df['diagnostico'].nunique())
+        if 'diagnostico' in df.columns:
+            st.metric("🏥 Diagnósticos Únicos", df['diagnostico'].nunique())
+        else:
+            st.metric("🏥 Diagnósticos Únicos", "N/A")
     
     with col4:
         st.metric("🔬 Exames Disponíveis", len([col for col in df.columns if col not in ['id', 'especie', 'raca', 'diagnostico']]))
@@ -281,7 +287,10 @@ if pagina == "🏠 Visão Geral":
     
     with col1:
         st.subheader("🐾 Distribuição por Espécie")
-        especie_counts = df['especie'].value_counts()
+        if 'especie' in df.columns:
+            especie_counts = df['especie'].value_counts()
+        else:
+            especie_counts = pd.Series()
         
         # Mostrar contagens
         st.write("**Contagens:**")
@@ -294,7 +303,10 @@ if pagina == "🏠 Visão Geral":
     
     with col2:
         st.subheader("🏥 Distribuição de Diagnósticos")
-        diag_counts = df['diagnostico'].value_counts()
+        if 'diagnostico' in df.columns:
+            diag_counts = df['diagnostico'].value_counts()
+        else:
+            diag_counts = pd.Series()
         
         # Mostrar contagens
         st.write("**Top 5 Diagnósticos:**")
@@ -312,27 +324,44 @@ if pagina == "🏠 Visão Geral":
     
     with col1:
         st.subheader("📊 Estatísticas de Idade")
-        idade_stats = df['idade_anos'].describe()
-        st.write(f"**Idade Média:** {idade_stats['mean']:.1f} anos")
-        st.write(f"**Idade Mínima:** {idade_stats['min']:.1f} anos")
-        st.write(f"**Idade Máxima:** {idade_stats['max']:.1f} anos")
-        
-        # Histograma de idade
-        st.bar_chart(df['idade_anos'].value_counts().sort_index())
+        if 'idade_anos' in df.columns:
+            idade_stats = df['idade_anos'].describe()
+        else:
+            idade_stats = pd.Series()
+        if not idade_stats.empty:
+            st.write(f"**Idade Média:** {idade_stats['mean']:.1f} anos")
+            st.write(f"**Idade Mínima:** {idade_stats['min']:.1f} anos")
+            st.write(f"**Idade Máxima:** {idade_stats['max']:.1f} anos")
+            
+            # Histograma de idade
+            st.bar_chart(df['idade_anos'].value_counts().sort_index())
+        else:
+            st.info("ℹ️ Informações de idade não disponíveis")
     
     with col2:
         st.subheader("🌡️ Sinais Vitais Médios")
-        temp_media = df['temperatura_retal'].mean()
-        pulso_medio = df['pulso'].mean()
-        freq_media = df['freq_respiratoria'].mean()
         
-        st.write(f"**Temperatura Média:** {temp_media:.1f}°C")
-        st.write(f"**Pulso Médio:** {pulso_medio:.0f} bpm")
-        st.write(f"**Frequência Respiratória:** {freq_media:.0f} rpm")
+        # Verificar se as colunas existem antes de acessá-las
+        if 'temperatura_retal' in df.columns:
+            temp_media = df['temperatura_retal'].mean()
+            st.write(f"**Temperatura Média:** {temp_media:.1f}°C")
         
-        # Gráfico de temperatura por espécie
-        temp_por_especie = df.groupby('especie')['temperatura_retal'].mean()
-        st.bar_chart(temp_por_especie)
+        if 'pulso' in df.columns:
+            pulso_medio = df['pulso'].mean()
+            st.write(f"**Pulso Médio:** {pulso_medio:.0f} bpm")
+        
+        if 'freq_respiratoria' in df.columns:
+            freq_media = df['freq_respiratoria'].mean()
+            st.write(f"**Frequência Respiratória:** {freq_media:.0f} rpm")
+        
+        # Se nenhuma coluna de sinais vitais existir, mostrar outras métricas
+        if not any(col in df.columns for col in ['temperatura_retal', 'pulso', 'freq_respiratoria']):
+            st.info("ℹ️ Sinais vitais não disponíveis neste dataset")
+        
+        # Gráfico de temperatura por espécie (se disponível)
+        if 'temperatura_retal' in df.columns and 'especie' in df.columns:
+            temp_por_especie = df.groupby('especie')['temperatura_retal'].mean()
+            st.bar_chart(temp_por_especie)
     
     st.markdown("---")
     
@@ -367,8 +396,10 @@ if pagina == "🏠 Visão Geral":
         st.write("**Qualidade dos Dados:**")
         valores_nulos = df.isnull().sum().sum()
         st.write(f"• Registros sem dados faltantes: {len(df) - valores_nulos}/{len(df)}")
-        st.write(f"• Espécies: {', '.join(df['especie'].unique())}")
-        st.write(f"• Faixa de idade: {df['idade_anos'].min():.1f} - {df['idade_anos'].max():.1f} anos")
+        if 'especie' in df.columns:
+            st.write(f"• Espécies: {', '.join(df['especie'].unique())}")
+        if 'idade_anos' in df.columns:
+            st.write(f"• Faixa de idade: {df['idade_anos'].min():.1f} - {df['idade_anos'].max():.1f} anos")
         st.write(f"• Dados sintéticos para demonstração")
 
 elif pagina == "📊 Análise de Dados":
@@ -379,13 +410,19 @@ elif pagina == "📊 Análise de Dados":
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        especie_filtro = st.selectbox("Espécie:", ['Todas'] + list(df['especie'].unique()))
+        if 'especie' in df.columns:
+            especie_filtro = st.selectbox("Espécie:", ['Todas'] + list(df['especie'].unique()))
+        else:
+            especie_filtro = 'Todas'
     
     with col2:
         idade_min, idade_max = st.slider("Faixa de Idade:", 0.0, 20.0, (0.0, 20.0))
     
     with col3:
-        diag_filtro = st.selectbox("Diagnóstico:", ['Todos'] + list(df['diagnostico'].unique()))
+        if 'diagnostico' in df.columns:
+            diag_filtro = st.selectbox("Diagnóstico:", ['Todos'] + list(df['diagnostico'].unique()))
+        else:
+            diag_filtro = 'Todos'
     
     # Aplicar filtros
     df_filtrado = df.copy()
