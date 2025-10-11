@@ -209,8 +209,41 @@ def carregar_dataset_fixo():
 # FORÇAR CARREGAMENTO DE DADOS - SEMPRE!
 st.info("🔄 Inicializando sistema...")
 
-# SEMPRE carregar dados incorporados (não depender de arquivos externos)
-df_real = carregar_dados_incorporados()
+# Tentar carregar dados reais primeiro, depois fallback para incorporados
+df_real = None
+dataset_source = ""
+
+# 1. Tentar carregar dados reais da pasta data
+try:
+    data_path = Path("data")
+    if data_path.exists():
+        csv_files = list(data_path.glob("*.csv"))
+        if csv_files:
+            # Priorizar datasets reais específicos
+            datasets_prioritarios = [
+                'veterinary_complete_real_dataset.csv',
+                'veterinary_master_dataset.csv', 
+                'veterinary_realistic_dataset.csv',
+                'clinical_veterinary_data.csv',
+                'laboratory_complete_panel.csv'
+            ]
+            
+            for dataset_name in datasets_prioritarios:
+                dataset_path = data_path / dataset_name
+                if dataset_path.exists():
+                    df_real = pd.read_csv(dataset_path)
+                    if df_real is not None and len(df_real) > 0:
+                        dataset_source = f"dados_reais_{dataset_name}"
+                        st.success(f"✅ Carregado dataset real: {dataset_name} ({len(df_real)} registros)")
+                        break
+except Exception as e:
+    st.warning(f"⚠️ Erro ao carregar dados reais: {e}")
+
+# 2. Se não conseguiu carregar dados reais, usar dados incorporados melhorados
+if df_real is None or len(df_real) == 0:
+    st.info("🔄 Carregando dados incorporados melhorados...")
+    df_real = carregar_dados_incorporados()
+    dataset_source = "dados_incorporados_melhorados"
 
 if df_real is not None and len(df_real) > 0:
     # SEMPRE definir os dados no session state
@@ -218,13 +251,13 @@ if df_real is not None and len(df_real) > 0:
     st.session_state.dataset_carregado_auto = True
     st.session_state.dataset_sempre_carregado = True
     st.session_state.dados_prontos = True
-    st.session_state.dataset_source = "dados_incorporados"
+    st.session_state.dataset_source = dataset_source
     
     # Adicionar informações de debug
     import datetime
     st.session_state.dataset_timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
-    st.success(f"✅ Sistema inicializado com {len(df_real)} registros!")
+    st.success(f"✅ Sistema inicializado com {len(df_real)} registros de {dataset_source}!")
 else:
     st.session_state.dados_prontos = False
     st.error("❌ Erro crítico: Não foi possível inicializar o sistema!")
@@ -715,64 +748,79 @@ elif pagina == "🤖 Treinar Modelo":
             
             st.success("✅ Bibliotecas importadas com sucesso!")
             
-            # Múltiplos modelos com hiperparâmetros otimizados
+            # Múltiplos modelos com hiperparâmetros otimizados para alta acurácia
             models = {
-                'Random Forest': RandomForestClassifier(
-                    n_estimators=200, 
-                    max_depth=10, 
-                    min_samples_split=5, 
-                    min_samples_leaf=2,
+                'Random Forest (Otimizado)': RandomForestClassifier(
+                    n_estimators=500, 
+                    max_depth=15, 
+                    min_samples_split=3, 
+                    min_samples_leaf=1,
+                    max_features='sqrt',
+                    bootstrap=True,
                     random_state=42
                 ),
-                'Gradient Boosting': GradientBoostingClassifier(
-                    n_estimators=200,
-                    learning_rate=0.1,
-                    max_depth=6,
+                'Gradient Boosting (Otimizado)': GradientBoostingClassifier(
+                    n_estimators=300,
+                    learning_rate=0.05,
+                    max_depth=8,
+                    min_samples_split=3,
+                    min_samples_leaf=1,
+                    subsample=0.8,
                     random_state=42
                 ),
-                'Logistic Regression': LogisticRegression(
+                'Logistic Regression (Otimizado)': LogisticRegression(
                     random_state=42, 
-                    max_iter=2000,
-                    C=1.0,
-                    solver='lbfgs'
+                    max_iter=5000,
+                    C=0.1,
+                    solver='liblinear',
+                    class_weight='balanced'
                 ),
-                'SVM Linear': SVC(
+                'SVM Linear (Otimizado)': SVC(
                     kernel='linear',
                     random_state=42, 
                     probability=True,
-                    C=1.0
+                    C=0.1,
+                    class_weight='balanced'
                 ),
-                'SVM RBF': SVC(
+                'SVM RBF (Otimizado)': SVC(
                     kernel='rbf',
                     random_state=42, 
                     probability=True,
                     C=1.0,
-                    gamma='scale'
+                    gamma='auto',
+                    class_weight='balanced'
                 ),
-                'K-Nearest Neighbors': KNeighborsClassifier(
-                    n_neighbors=7,
+                'K-Nearest Neighbors (Otimizado)': KNeighborsClassifier(
+                    n_neighbors=5,
                     weights='distance',
-                    metric='minkowski'
+                    metric='minkowski',
+                    algorithm='auto'
                 ),
-                'Decision Tree': DecisionTreeClassifier(
-                    max_depth=10,
-                    min_samples_split=10,
-                    min_samples_leaf=5,
+                'Decision Tree (Otimizado)': DecisionTreeClassifier(
+                    max_depth=15,
+                    min_samples_split=2,
+                    min_samples_leaf=1,
+                    max_features='sqrt',
                     random_state=42
                 ),
-                'Extra Trees': ExtraTreesClassifier(
+                'Extra Trees (Otimizado)': ExtraTreesClassifier(
+                    n_estimators=500,
+                    max_depth=15,
+                    min_samples_split=2,
+                    min_samples_leaf=1,
+                    max_features='sqrt',
+                    random_state=42
+                ),
+                'AdaBoost (Otimizado)': AdaBoostClassifier(
                     n_estimators=200,
-                    max_depth=10,
-                    min_samples_split=5,
+                    learning_rate=0.1,
+                    algorithm='SAMME.R',
                     random_state=42
                 ),
-                'AdaBoost': AdaBoostClassifier(
-                    n_estimators=100,
-                    learning_rate=0.5,
-                    random_state=42
-                ),
-                'Bagging': BaggingClassifier(
-                    n_estimators=100,
+                'Bagging (Otimizado)': BaggingClassifier(
+                    n_estimators=200,
+                    max_samples=0.8,
+                    max_features=0.8,
                     random_state=42
                 )
             }
@@ -875,14 +923,49 @@ elif pagina == "🤖 Treinar Modelo":
                 fig.update_layout(height=500)
                 st.plotly_chart(fig, use_container_width=True)
                 
-                # Melhor modelo
-                best_model_name = results_df.iloc[0]['Modelo']
-                best_model = results[best_model_name]['model']
-                best_accuracy = float(results_df.iloc[0]['Acurácia'])
-                best_score_total = float(results_df.iloc[0]['Score Total'])
-                
-                st.success(f"🏆 **Melhor Modelo:** {best_model_name}")
-                st.info(f"📊 **Acurácia:** {best_accuracy:.3f} | **Score Total:** {best_score_total:.3f}")
+                        # Melhor modelo
+                        best_model_name = results_df.iloc[0]['Modelo']
+                        best_model = results[best_model_name]['model']
+                        best_accuracy = float(results_df.iloc[0]['Acurácia'])
+                        best_score_total = float(results_df.iloc[0]['Score Total'])
+                        
+                        st.success(f"🏆 **Melhor Modelo:** {best_model_name}")
+                        st.info(f"📊 **Acurácia:** {best_accuracy:.3f} | **Score Total:** {best_score_total:.3f}")
+                        
+                        # Ensemble dos top 3 modelos para melhorar acurácia
+                        st.subheader("🎯 Ensemble dos Top 3 Modelos")
+                        
+                        top_3_models = []
+                        top_3_names = []
+                        
+                        for i, (_, row) in enumerate(results_df.head(3).iterrows()):
+                            model_name = row['Modelo']
+                            if results[model_name]['model'] is not None:
+                                top_3_models.append(results[model_name]['model'])
+                                top_3_names.append(model_name)
+                        
+                        if len(top_3_models) >= 2:
+                            # Criar ensemble voting classifier
+                            from sklearn.ensemble import VotingClassifier
+                            
+                            ensemble = VotingClassifier(
+                                estimators=[(name, model) for name, model in zip(top_3_names, top_3_models)],
+                                voting='soft'
+                            )
+                            
+                            # Treinar ensemble
+                            ensemble.fit(X_train_scaled, y_train)
+                            ensemble_pred = ensemble.predict(X_test_scaled)
+                            ensemble_accuracy = accuracy_score(y_test, ensemble_pred)
+                            ensemble_f1 = f1_score(y_test, ensemble_pred, average='macro')
+                            
+                            st.success(f"🎯 **Ensemble Accuracy:** {ensemble_accuracy:.3f}")
+                            st.info(f"🎯 **Ensemble F1-Score:** {ensemble_f1:.3f}")
+                            
+                            if ensemble_accuracy > best_accuracy:
+                                st.success(f"🚀 **Melhoria:** Ensemble é {ensemble_accuracy - best_accuracy:.3f} pontos melhor que o melhor modelo individual!")
+                            else:
+                                st.info("ℹ️ Ensemble não melhorou significativamente o melhor modelo individual.")
                 
                 # Mostrar top 3 modelos
                 st.subheader("🥇 Top 3 Modelos")
