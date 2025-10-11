@@ -30,33 +30,40 @@ st.set_page_config(
 st.markdown("""
 <style>
     .main-header {
-        font-size: 3rem;
-        font-weight: bold;
+        font-size: 2.5rem;
         color: #1f77b4;
         text-align: center;
-        margin-bottom: 1rem;
-    }
-    .sub-header {
-        font-size: 1.2rem;
-        text-align: center;
-        color: #666;
         margin-bottom: 2rem;
     }
-    .stAlert {
-        margin-top: 1rem;
-    }
-    .dataset-link {
-        padding: 10px;
+    .metric-card {
         background-color: #f0f2f6;
-        border-radius: 5px;
-        margin: 5px 0;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        border-left: 4px solid #1f77b4;
+    }
+    .success-box {
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+        padding: 1rem;
+        border-radius: 0.5rem;
+    }
+    .warning-box {
+        background-color: #fff3cd;
+        border: 1px solid #ffeaa7;
+        color: #856404;
+        padding: 1rem;
+        border-radius: 0.5rem;
+    }
+    .error-box {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+        padding: 1rem;
+        border-radius: 0.5rem;
     }
 </style>
 """, unsafe_allow_html=True)
-
-# Header principal
-st.markdown('<div class="main-header">🐾 VetDiagnosisAI</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-header">Sistema Inteligente de Apoio ao Diagnóstico Veterinário</div>', unsafe_allow_html=True)
 
 # Inicialização do session_state
 if 'df_main' not in st.session_state:
@@ -74,9 +81,6 @@ if 'target_names' not in st.session_state:
 def carregar_dados_incorporados():
     """Carrega dados reais incorporados diretamente no código"""
     try:
-        import pandas as pd
-        import numpy as np
-        
         # Dados veterinários realistas com padrões clínicos corretos (800 registros)
         np.random.seed(42)  # Para resultados consistentes
         
@@ -231,14 +235,9 @@ def carregar_dados_incorporados():
         return None
 
 # Função para carregar dataset automaticamente (fallback)
-# @st.cache_data(ttl=3600)  # Cache desabilitado para forçar atualização
 def carregar_dataset_fixo():
     """Carrega o dataset de forma fixa e em cache"""
     try:
-        import pandas as pd
-        import numpy as np
-        from pathlib import Path
-        
         # Tentar carregar dataset da pasta data - priorizar datasets reais
         data_path = Path("data")
         csv_files = list(data_path.glob("*.csv")) if data_path.exists() else []
@@ -250,58 +249,32 @@ def carregar_dataset_fixo():
                 'veterinary_master_dataset.csv', 
                 'veterinary_realistic_dataset.csv',
                 'clinical_veterinary_data.csv',
-                'laboratory_complete_panel.csv',
-                'uci_horse_colic.csv'
+                'laboratory_complete_panel.csv'
             ]
             
-            dataset_escolhido = None
-            for dataset in datasets_prioritarios:
-                if Path(data_path / dataset).exists():
-                    dataset_escolhido = data_path / dataset
-                    break
+            for dataset_name in datasets_prioritarios:
+                dataset_path = data_path / dataset_name
+                if dataset_path.exists():
+                    df = pd.read_csv(dataset_path)
+                    if df is not None and len(df) > 0:
+                        # Adicionar metadados
+                        df.attrs['dataset_source'] = f'dados_reais_{dataset_name}'
+                        df.attrs['dataset_path'] = str(dataset_path)
+                        df.attrs['load_timestamp'] = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
+                        return df
             
-            # Se não encontrar um dos prioritários, usar o primeiro disponível
-            if not dataset_escolhido:
-                dataset_escolhido = csv_files[0]
-            
-            df = pd.read_csv(dataset_escolhido)
-            df = df.dropna(how='all')  # Remove linhas completamente vazias
-            
-            # Padronizar nomes de colunas se necessário
-            if 'especie' in df.columns:
-                df['especie'] = df['especie'].str.title()
-                df['especie'] = df['especie'].replace({'Canina': 'Cão', 'Felina': 'Gato'})
-            
-            return df
+            # Se não encontrou os prioritários, usar o primeiro disponível
+            if csv_files:
+                dataset_path = csv_files[0]
+                df = pd.read_csv(dataset_path)
+                if df is not None and len(df) > 0:
+                    df.attrs['dataset_source'] = f'dados_reais_{dataset_path.name}'
+                    df.attrs['dataset_path'] = str(dataset_path)
+                    df.attrs['load_timestamp'] = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
+                    return df
         
-        # Se não encontrar arquivos, criar dados de exemplo
-        np.random.seed(42)
-        n_samples = 100
-        
-        # Criar dados sintéticos
-        data = {
-            'id': range(1, n_samples + 1),
-            'especie': np.random.choice(['Cão', 'Gato'], n_samples),
-            'raca': np.random.choice(['SRD', 'Pastor', 'Siames', 'Persa'], n_samples),
-            'idade_anos': np.random.uniform(1, 15, n_samples).round(1),
-            'sexo': np.random.choice(['M', 'F'], n_samples),
-            'hemoglobina': np.random.normal(12, 2, n_samples).round(1),
-            'hematocrito': np.random.normal(40, 5, n_samples).round(1),
-            'leucocitos': np.random.normal(8000, 2000, n_samples).round(0),
-            'glicose': np.random.normal(100, 20, n_samples).round(1),
-            'ureia': np.random.normal(30, 10, n_samples).round(1),
-            'creatinina': np.random.normal(1.2, 0.3, n_samples).round(2),
-            'temperatura_retal': np.random.normal(38.5, 0.5, n_samples).round(1),
-            'febre': np.random.choice([0, 1], n_samples),
-            'apatia': np.random.choice([0, 1], n_samples),
-            'perda_peso': np.random.choice([0, 1], n_samples),
-            'vomito': np.random.choice([0, 1], n_samples),
-            'diarreia': np.random.choice([0, 1], n_samples),
-            'diagnostico': np.random.choice(['Normal', 'Infecção', 'Doença Renal', 'Diabetes'], n_samples)
-        }
-        
-        df = pd.DataFrame(data)
-        return df
+        # Fallback: dados incorporados
+        return carregar_dados_incorporados()
         
     except Exception as e:
         st.error(f"❌ Erro ao carregar dataset: {str(e)}")
@@ -349,8 +322,8 @@ if df_real is None or len(df_real) == 0:
 if df_real is not None and len(df_real) > 0:
     # SEMPRE definir os dados no session state
     st.session_state.df_main = df_real
-            st.session_state.dataset_carregado_auto = True
-            st.session_state.dataset_sempre_carregado = True
+    st.session_state.dataset_carregado_auto = True
+    st.session_state.dataset_sempre_carregado = True
     st.session_state.dados_prontos = True
     st.session_state.dataset_source = dataset_source
     
@@ -359,7 +332,7 @@ if df_real is not None and len(df_real) > 0:
     st.session_state.dataset_timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     st.success(f"✅ Sistema inicializado com {len(df_real)} registros de {dataset_source}!")
-        else:
+else:
     st.session_state.dados_prontos = False
     st.error("❌ Erro crítico: Não foi possível inicializar o sistema!")
 
@@ -367,347 +340,149 @@ if df_real is not None and len(df_real) > 0:
 with st.sidebar:
     st.image("https://img.icons8.com/color/96/000000/veterinarian.png", width=100)
     st.title("Navegação")
-    st.markdown("---")
     
-    # Sistema de navegação por páginas
-    pagina = st.selectbox(
-        "Escolha uma página:",
-        [
-            "🏠 Visão Geral",
-            "📊 Análise de Dados", 
-            "🤖 Treinar Modelo",
-            "🔍 Predição",
-            "📈 Estatísticas",
-            "📁 Informações do Dataset"
-        ]
-    )
-    st.markdown("---")
-    
-    # Status do dataset (sempre carregado)
-    st.subheader("📊 Status dos Dados")
+    # Informações do dataset carregado
     if st.session_state.df_main is not None:
-        st.success(f"✅ Dataset carregado: {len(st.session_state.df_main)} registros")
-        
-        # Mostrar status do dataset carregado
-        if len(st.session_state.df_main) >= 500:
-            st.success(f"🎉 Dataset real carregado! ({len(st.session_state.df_main)} registros)")
-        elif len(st.session_state.df_main) >= 300:
-            st.warning(f"⚠️ Dataset médio carregado ({len(st.session_state.df_main)} registros)")
-        else:
-            st.error(f"❌ Dataset pequeno detectado ({len(st.session_state.df_main)} registros)")
-        
-        # Mostrar informações do dataset
-        if hasattr(st.session_state.df_main, 'columns'):
-            st.caption(f"📋 Colunas: {len(st.session_state.df_main.columns)}")
-            if 'diagnostico' in st.session_state.df_main.columns:
-                diagnosticos = st.session_state.df_main['diagnostico'].nunique()
-                st.caption(f"🏥 Diagnósticos: {diagnosticos}")
-            if 'especie' in st.session_state.df_main.columns:
-                especies = st.session_state.df_main['especie'].nunique()
-                st.caption(f"🐾 Espécies: {especies}")
-        
-        # Mostrar informações de debug sobre o dataset
+        st.success(f"📊 Dataset: {len(st.session_state.df_main)} registros")
         if hasattr(st.session_state, 'dataset_source'):
-            st.success(f"📁 Dataset: {st.session_state.dataset_source}")
+            st.info(f"📁 Fonte: {st.session_state.dataset_source}")
         if hasattr(st.session_state, 'dataset_timestamp'):
-            st.caption(f"⏰ Carregado em: {st.session_state.dataset_timestamp}")
-        
-        # Mostrar informações básicas sobre arquivos disponíveis
-        data_path = Path("data")
-        if data_path.exists():
-            csv_files = list(data_path.glob("*.csv"))
-            st.info(f"📁 {len(csv_files)} arquivos CSV disponíveis")
-        else:
-            st.error("❌ Pasta 'data' não encontrada!")
-        
-        # Botão para forçar recarregamento
-        if st.button("🔄 Recarregar Dataset", use_container_width=True):
-            # Recarregar dados incorporados
-            df_auto = carregar_dados_incorporados()
-            if df_auto is not None:
-                st.session_state.df_main = df_auto
-                st.success(f"✅ Dataset recarregado: {len(df_auto)} registros")
-                st.rerun()
-            else:
-                st.error("❌ Erro ao recarregar dataset")
-    else:
-        # Este caso não deveria acontecer mais, mas mantemos como fallback
-        st.error("❌ Erro: Dataset não carregado")
-        st.markdown("🔄 **Tentando carregar automaticamente...**")
-        
-        if st.button("📊 Forçar Carregamento", type="primary", use_container_width=True):
-            df_auto = carregar_dados_incorporados()
-            if df_auto is not None:
-                st.session_state.df_main = df_auto
-                st.session_state.dataset_sempre_carregado = True
-                st.success(f"✅ Dataset carregado: {len(df_auto)} registros")
-                st.rerun()
-            else:
-                st.error("❌ Erro ao carregar dataset")
+            st.info(f"🕒 Carregado: {st.session_state.dataset_timestamp}")
     
-    # Status do modelo
-    st.subheader("🤖 Status do Modelo")
-    if st.session_state.modelo_treinado is not None:
-        st.success("✅ Modelo treinado disponível")
-    else:
-        st.warning("⚠️ Nenhum modelo treinado")
-        st.markdown("👉 Vá para **🤖 Treinar Modelo**")
-    
-    st.markdown("---")
-    
-    # Datasets sugeridos
-    with st.expander("🔗 Datasets Públicos Sugeridos"):
-        st.markdown("""
-        **1. Kaggle – Veterinary Disease Detection**
-        
-        Dados de sintomas e diagnósticos veterinários.
-        
-        [🔗 Acessar](https://www.kaggle.com/datasets/taruntiwarihp/veterinary-disease-detection)
-        
-        ---
-        
-        **2. UCI – Horse Colic**
-        
-        Dados de cólica em cavalos (excelente para ML).
-        
-        [🔗 Acessar](https://archive.ics.uci.edu/dataset/46/horse+colic)
-        
-        ---
-        
-        **3. Kaggle – Animal Blood Samples**
-        
-        Amostras de sangue de animais para análise.
-        
-        [🔗 Acessar](https://www.kaggle.com/datasets/andrewmvd/animal-blood-samples)
-        
-        ---
-        
-        ⚠️ **Importante:** Verifique as licenças e termos de uso.
-        """)
-    
-    st.markdown("---")
-    
-    # Avisos legais
-    with st.expander("⚠️ Avisos Legais"):
-        st.warning("""
-        **Esta é uma ferramenta educacional.**
-        
-        - ❌ NÃO substitui julgamento clínico veterinário
-        - ❌ NÃO deve ser usada como única base para decisões
-        - ✅ Ideal para ensino e pesquisa
-        - ✅ Apoio à decisão para profissionais
-        
-        **Sempre consulte um médico veterinário licenciado.**
-        """)
+    # Navegação por páginas
+    pagina = st.selectbox(
+        "Selecione a página:",
+        ["🏠 Visão Geral", "📊 Análise de Dados", "🤖 Treinar Modelo", "🔍 Predição", "📈 Estatísticas", "📁 Informações do Dataset"]
+    )
 
-# Corpo principal - Status do dataset
-st.markdown("## 🎯 Bem-vindo ao VetDiagnosisAI")
+# Título principal
+st.markdown('<h1 class="main-header">🐾 VetDiagnosisAI</h1>', unsafe_allow_html=True)
+st.markdown('<p style="text-align: center; font-size: 1.2rem; color: #666;">Sistema Inteligente de Apoio ao Diagnóstico Veterinário</p>', unsafe_allow_html=True)
 
-# Status do dataset sempre carregado
-if st.session_state.df_main is not None:
-    st.success(f"✅ **Dataset sempre carregado e pronto!** - {len(st.session_state.df_main)} registros disponíveis")
-    
-    # Mostrar estatísticas rápidas
-    col_stats1, col_stats2, col_stats3, col_stats4 = st.columns(4)
-    
-    with col_stats1:
-        st.metric("📄 Total de Registros", len(st.session_state.df_main))
-    
-    with col_stats2:
-        if 'diagnostico' in st.session_state.df_main.columns:
-            diagnosticos = st.session_state.df_main['diagnostico'].nunique()
-            st.metric("🏥 Diagnósticos", diagnosticos)
-        else:
-            st.metric("🏥 Diagnósticos", "N/A")
-    
-    with col_stats3:
-        if 'especie' in st.session_state.df_main.columns:
-            especies = st.session_state.df_main['especie'].nunique()
-            st.metric("🐾 Espécies", especies)
-        else:
-            st.metric("🐾 Espécies", "N/A")
-    
-    with col_stats4:
-        st.metric("📋 Colunas", len(st.session_state.df_main.columns))
-    
-    st.info("🔄 **O dataset é carregado automaticamente sempre que você acessar a aplicação!**")
-else:
-    st.error("❌ Erro: Dataset não está carregado. Recarregue a página.")
+# Verificar se os dados estão carregados
+if st.session_state.df_main is None:
+    st.error("❌ Nenhum dataset carregado. Por favor, verifique os arquivos de dados.")
+    st.stop()
 
-st.markdown("---")
+df = st.session_state.df_main
 
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    st.markdown("""
-    ### 📊 1. Explorar Dados
-    
-    O dataset já está carregado! Explore os dados:
-    
-    - **📊 Visão Geral**: Métricas principais
-    - **🧪 EDA**: Análise exploratória interativa
-    - **📥 Upload**: Adicionar mais dados se necessário
-    """)
-
-with col2:
-    st.markdown("""
-    ### 🔍 2. Explorar & Analisar
-    
-    Navegue pelas páginas de análise:
-    
-    - **📊 Visão Geral**: Métricas principais
-    - **🧪 EDA**: Análise exploratória interativa
-    - **🧠 Insights**: Observações automáticas
-    """)
-
-with col3:
-    st.markdown("""
-    ### 🤖 3. Treinar & Prever
-    
-    Use Machine Learning:
-    
-    - **🤖 Treinar Modelo**: Pipeline completo de ML
-    - **🔍 Predição**: Diagnósticos com explicabilidade
-    """)
-
-st.markdown("---")
-
-# Cards com recursos principais
-st.markdown("## 🌟 Principais Recursos")
-
-col1, col2 = st.columns(2)
-
-with col1:
-    with st.container():
-        st.markdown("""
-        ### 📊 Análise de Dados Veterinários
-        
-        - Suporte a múltiplas espécies (Canina, Felina, Equina)
-        - Análise de exames laboratoriais completos
-        - Correlação entre sintomas e diagnósticos
-        - Detecção automática de valores críticos
-        - Comparação com faixas de referência por espécie
-        """)
-
-with col2:
-    with st.container():
-        st.markdown("""
-        ### 🤖 Machine Learning Avançado
-        
-        - Múltiplos algoritmos (LogReg, RF, LightGBM, XGBoost)
-        - Balanceamento automático de classes
-        - Grid search de hiperparâmetros
-        - Explicabilidade com SHAP
-        - Validação cruzada estratificada
-        """)
-
-st.markdown("---")
-
-# Quick start
-st.markdown("## 🚀 Quick Start")
-
-with st.expander("📖 Ver tutorial rápido"):
-    st.markdown("""
-    ### Passo a Passo
-    
-    1. **Carregue os dados** (página "📥 Upload de Dados")
-       - Use o arquivo `data/exemplo_vet.csv` para começar
-       - Ou faça upload do seu próprio dataset
-       
-    2. **Explore os dados** (página "🧪 Laboratório & Sintomas")
-       - Visualize distribuições
-       - Identifique correlações
-       - Analise por espécie/raça
-       
-    3. **Treine um modelo** (página "🤖 Treinar Modelo")
-       - Selecione algoritmo
-       - Configure parâmetros
-       - Avalie performance
-       
-    4. **Faça predições** (página "🔍 Predição")
-       - Insira dados manualmente
-       - Ou faça upload de arquivo
-       - Veja diagnósticos prováveis com explicação
-       
-    5. **Analise insights** (página "🧠 Insights & Regras")
-       - Observações clínicas automáticas
-       - Hipóteses baseadas em dados
-       - Sugestões de acompanhamento
-    """)
-
-# Sistema de páginas
+# Navegação por páginas
 if pagina == "🏠 Visão Geral":
-    st.markdown("---")
+    st.header("📊 Visão Geral do Sistema")
     
-    # Footer
-    st.markdown("""
-    <div style='text-align: center; color: #666; padding: 20px;'>
-        <p>🐾 VetDiagnosisAI v1.0 | Desenvolvido para profissionais veterinários e pesquisadores</p>
-        <p>⚠️ Ferramenta educacional - Não substitui avaliação clínica profissional</p>
-    </div>
-    """, unsafe_allow_html=True)
+    # Métricas principais
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.metric("Total de Registros", len(df))
+    
+    with col2:
+        especies = df['especie'].nunique() if 'especie' in df.columns else 0
+        st.metric("Espécies", especies)
+    
+    with col3:
+        diagnosticos = df['diagnostico'].nunique() if 'diagnostico' in df.columns else 0
+        st.metric("Diagnósticos", diagnosticos)
+    
+    with col4:
+        colunas = len(df.columns)
+        st.metric("Variáveis", colunas)
+    
+    # Distribuição por espécie
+    if 'especie' in df.columns:
+        st.subheader("📊 Distribuição por Espécie")
+        especie_counts = df['especie'].value_counts()
+        
+        col1, col2 = st.columns([2, 1])
+        
+        with col1:
+            fig = px.pie(values=especie_counts.values, names=especie_counts.index, 
+                        title="Distribuição por Espécie")
+            st.plotly_chart(fig, use_container_width=True)
+        
+        with col2:
+            st.dataframe(especie_counts.reset_index().rename(columns={'index': 'Espécie', 'especie': 'Quantidade'}))
+    
+    # Distribuição de diagnósticos
+    if 'diagnostico' in df.columns:
+        st.subheader("🏥 Distribuição de Diagnósticos")
+        diag_counts = df['diagnostico'].value_counts().head(10)
+        
+        fig = px.bar(x=diag_counts.values, y=diag_counts.index, 
+                    title="Top 10 Diagnósticos",
+                    orientation='h')
+        fig.update_layout(yaxis={'categoryorder': 'total ascending'})
+        st.plotly_chart(fig, use_container_width=True)
 
 elif pagina == "📊 Análise de Dados":
-    st.header("📊 Análise Exploratória de Dados")
+    st.header("📊 Análise Detalhada dos Dados")
     
-    if st.session_state.df_main is not None:
-        df = st.session_state.df_main
-        
-        # Filtros
-        st.subheader("🔍 Filtros")
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            if 'especie' in df.columns:
-                especie_filtro = st.selectbox("Espécie:", ['Todas'] + list(df['especie'].unique()))
-            else:
-                especie_filtro = 'Todas'
-        
-        with col2:
-            if 'idade_anos' in df.columns:
-                idade_min, idade_max = st.slider("Faixa de Idade:", 0.0, 20.0, (0.0, 20.0))
-            else:
-                st.info("Idade não disponível")
-        
-        with col3:
-            if 'diagnostico' in df.columns:
-                diag_filtro = st.selectbox("Diagnóstico:", ['Todos'] + list(df['diagnostico'].unique()))
-            else:
-                diag_filtro = 'Todos'
-        
-        # Aplicar filtros
-        df_filtrado = df.copy()
-        if especie_filtro != 'Todas':
-            df_filtrado = df_filtrado[df_filtrado['especie'] == especie_filtro]
+    # Filtros
+    st.subheader("🔍 Filtros")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        if 'especie' in df.columns:
+            especies_filtro = st.multiselect("Espécie", df['especie'].unique(), default=df['especie'].unique())
+        else:
+            especies_filtro = []
+    
+    with col2:
         if 'idade_anos' in df.columns:
-            df_filtrado = df_filtrado[
-                (df_filtrado['idade_anos'] >= idade_min) & 
-                (df_filtrado['idade_anos'] <= idade_max)
-            ]
-        if diag_filtro != 'Todos':
-            df_filtrado = df_filtrado[df_filtrado['diagnostico'] == diag_filtro]
-        
-        st.info(f"📊 Mostrando {len(df_filtrado)} registros após filtros")
-        
-        # Estatísticas básicas
-        col1, col2, col3, col4 = st.columns(4)
-        with col1:
-            st.metric("Total", len(df_filtrado))
-        with col2:
-            if 'especie' in df_filtrado.columns:
-                st.metric("Espécies", df_filtrado['especie'].nunique())
-        with col3:
-            if 'diagnostico' in df_filtrado.columns:
-                st.metric("Diagnósticos", df_filtrado['diagnostico'].nunique())
-        with col4:
-            st.metric("Colunas", len(df_filtrado.columns))
-        
-        # Amostra dos dados
-        st.subheader("📋 Amostra dos Dados")
-        st.dataframe(df_filtrado.head(10), use_container_width=True)
+            idade_range = st.slider("Idade (anos)", 
+                                  float(df['idade_anos'].min()), 
+                                  float(df['idade_anos'].max()), 
+                                  (float(df['idade_anos'].min()), float(df['idade_anos'].max())))
+        else:
+            idade_range = (0, 20)
     
-    else:
-        st.error("❌ Dataset não carregado")
+    with col3:
+        if 'diagnostico' in df.columns:
+            diag_filtro = st.multiselect("Diagnóstico", df['diagnostico'].unique(), default=df['diagnostico'].unique())
+        else:
+            diag_filtro = []
+    
+    # Aplicar filtros
+    df_filtrado = df.copy()
+    
+    if especies_filtro and 'especie' in df.columns:
+        df_filtrado = df_filtrado[df_filtrado['especie'].isin(especies_filtro)]
+    
+    if 'idade_anos' in df.columns:
+        df_filtrado = df_filtrado[
+            (df_filtrado['idade_anos'] >= idade_range[0]) & 
+            (df_filtrado['idade_anos'] <= idade_range[1])
+        ]
+    
+    if diag_filtro and 'diagnostico' in df.columns:
+        df_filtrado = df_filtrado[df_filtrado['diagnostico'].isin(diag_filtro)]
+    
+    st.info(f"📊 Mostrando {len(df_filtrado)} registros de {len(df)} totais")
+    
+    # Visualizações
+    if len(df_filtrado) > 0:
+        # Distribuição de idade
+        if 'idade_anos' in df_filtrado.columns:
+            st.subheader("📈 Distribuição de Idade")
+            fig = px.histogram(df_filtrado, x='idade_anos', nbins=20, title="Distribuição de Idade")
+            st.plotly_chart(fig, use_container_width=True)
+        
+        # Correlações entre variáveis numéricas
+        numeric_cols = df_filtrado.select_dtypes(include=[np.number]).columns
+        if len(numeric_cols) > 1:
+            st.subheader("🔗 Matriz de Correlação")
+            corr_matrix = df_filtrado[numeric_cols].corr()
+            
+            fig = px.imshow(corr_matrix, 
+                           text_auto=True, 
+                           aspect="auto",
+                           title="Matriz de Correlação")
+            st.plotly_chart(fig, use_container_width=True)
+        
+        # Tabela de dados
+        st.subheader("📋 Dados Filtrados")
+        st.dataframe(df_filtrado.head(100), use_container_width=True)
 
 elif pagina == "🤖 Treinar Modelo":
     st.header("🤖 Sistema de Machine Learning Veterinário")
@@ -1085,7 +860,7 @@ elif pagina == "🤖 Treinar Modelo":
                     }).sort_values('Importance', ascending=False)
                     
                     fig = px.bar(feature_importance.head(10), x='Importance', y='Feature', 
-                                 title='Top 10 Features Mais Importantes')
+                                title='Top 10 Features Mais Importantes')
                     st.plotly_chart(fig, use_container_width=True)
                 
                 # Matriz de confusão
@@ -1139,140 +914,183 @@ elif pagina == "🤖 Treinar Modelo":
         st.error("❌ Dataset não carregado")
 
 elif pagina == "🔍 Predição":
-    st.header("🔍 Predição Interativa")
+    st.header("🔍 Predição de Diagnóstico")
     
-    if st.session_state.df_main is not None:
-        st.info("💡 Use os dados do paciente para fazer predições com o melhor modelo treinado.")
+    if st.session_state.modelo_treinado is not None:
+        st.success("✅ Modelo carregado e pronto para predição!")
         
-        # Formulário para entrada de dados
-        with st.form("prediction_form"):
-            st.subheader("📝 Dados do Paciente")
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                if 'especie' in st.session_state.df_main.columns:
-                    especie_pred = st.selectbox("Espécie:", st.session_state.df_main['especie'].unique())
-                if 'sexo' in st.session_state.df_main.columns:
-                    sexo_pred = st.selectbox("Sexo:", st.session_state.df_main['sexo'].unique())
-                if 'idade_anos' in st.session_state.df_main.columns:
-                    idade_pred = st.number_input("Idade (anos):", 0.1, 25.0, 5.0)
-            
-            with col2:
-                if 'hemoglobina' in st.session_state.df_main.columns:
-                    hemoglobina_pred = st.number_input("Hemoglobina:", 5.0, 20.0, 12.0)
-                if 'hematocrito' in st.session_state.df_main.columns:
-                    hematocrito_pred = st.number_input("Hematócrito:", 20.0, 60.0, 40.0)
-                if 'glicose' in st.session_state.df_main.columns:
-                    glicose_pred = st.number_input("Glicose:", 50.0, 300.0, 100.0)
-            
-            submitted = st.form_submit_button("🔍 Predizer Diagnóstico")
-            
-            if submitted:
-                st.success("✅ Predição realizada! (Em desenvolvimento - use a página Treinar Modelo primeiro)")
-    
-    else:
-        st.error("❌ Dataset não carregado")
-
-elif pagina == "📈 Estatísticas":
-    st.header("📈 Estatísticas Detalhadas")
-    
-    if st.session_state.df_main is not None:
-        df = st.session_state.df_main
-        
-        # Estatísticas gerais
-        st.subheader("📊 Estatísticas Gerais")
-        
-        col1, col2, col3, col4 = st.columns(4)
-        
-        with col1:
-            st.metric("Total de Registros", len(df))
-        
-        with col2:
-            if 'especie' in df.columns:
-                st.metric("Espécies", df['especie'].nunique())
-            else:
-                st.metric("Espécies", "N/A")
-        
-        with col3:
-            if 'diagnostico' in df.columns:
-                st.metric("Diagnósticos", df['diagnostico'].nunique())
-            else:
-                st.metric("Diagnósticos", "N/A")
-        
-        with col4:
-            st.metric("Colunas", len(df.columns))
-        
-        # Distribuição por espécie
-        if 'especie' in df.columns:
-            st.subheader("🐾 Distribuição por Espécie")
-            especie_counts = df['especie'].value_counts()
-            st.bar_chart(especie_counts)
-        
-        # Distribuição por diagnóstico
-        if 'diagnostico' in df.columns:
-            st.subheader("🏥 Distribuição por Diagnóstico")
-            diag_counts = df['diagnostico'].value_counts()
-            st.bar_chart(diag_counts)
-        
-        # Amostra dos dados
-        st.subheader("📋 Amostra dos Dados")
-        st.dataframe(df.head(10), use_container_width=True)
-    
-    else:
-        st.error("❌ Dataset não carregado")
-
-elif pagina == "📁 Informações do Dataset":
-    st.header("📁 Informações do Dataset")
-    
-    if st.session_state.df_main is not None:
-        df = st.session_state.df_main
-        
-        st.subheader("📊 Metadados")
+        # Formulário de entrada
+        st.subheader("📝 Dados do Paciente")
         
         col1, col2 = st.columns(2)
         
         with col1:
-            st.write(f"**Total de registros:** {len(df)}")
-            st.write(f"**Total de colunas:** {len(df.columns)}")
-            st.write(f"**Memória usada:** {df.memory_usage(deep=True).sum() / 1024**2:.2f} MB")
+            especie = st.selectbox("Espécie", ["Cão", "Gato"])
+            idade = st.number_input("Idade (anos)", min_value=0.1, max_value=30.0, value=5.0)
+            sexo = st.selectbox("Sexo", ["M", "F"])
+            
+            # Exames laboratoriais
+            st.subheader("🧪 Exames Laboratoriais")
+            hemoglobina = st.number_input("Hemoglobina (g/dL)", min_value=5.0, max_value=20.0, value=12.0)
+            hematocrito = st.number_input("Hematócrito (%)", min_value=15.0, max_value=60.0, value=40.0)
+            leucocitos = st.number_input("Leucócitos (/μL)", min_value=1000, max_value=30000, value=8000)
+            glicose = st.number_input("Glicose (mg/dL)", min_value=50.0, max_value=400.0, value=100.0)
         
         with col2:
-            if hasattr(st.session_state, 'dataset_source'):
-                st.write(f"**Fonte do dataset:** {st.session_state.dataset_source}")
-            if hasattr(st.session_state, 'dataset_timestamp'):
-                st.write(f"**Carregado em:** {st.session_state.dataset_timestamp}")
+            ureia = st.number_input("Ureia (mg/dL)", min_value=10.0, max_value=200.0, value=30.0)
+            creatinina = st.number_input("Creatinina (mg/dL)", min_value=0.5, max_value=10.0, value=1.2)
+            alt = st.number_input("ALT (U/L)", min_value=10.0, max_value=500.0, value=40.0)
+            ast = st.number_input("AST (U/L)", min_value=10.0, max_value=400.0, value=30.0)
+            
+            # Sintomas
+            st.subheader("🩺 Sintomas")
+            febre = st.checkbox("Febre")
+            apatia = st.checkbox("Apatia")
+            perda_peso = st.checkbox("Perda de Peso")
+            vomito = st.checkbox("Vômito")
+            diarreia = st.checkbox("Diarreia")
+            tosse = st.checkbox("Tosse")
+            letargia = st.checkbox("Letargia")
+            feridas_cutaneas = st.checkbox("Feridas Cutâneas")
+            poliuria = st.checkbox("Poliúria")
+            polidipsia = st.checkbox("Polidipsia")
         
-        st.subheader("📋 Estrutura das Colunas")
-        
-        # Informações sobre cada coluna
-        col_info = []
-        for col in df.columns:
-            col_info.append({
-                'Coluna': col,
-                'Tipo': str(df[col].dtype),
-                'Valores Únicos': df[col].nunique(),
-                'Valores Nulos': df[col].isnull().sum(),
-                'Valores Nulos %': f"{(df[col].isnull().sum() / len(df)) * 100:.1f}%"
-            })
-        
-        col_info_df = pd.DataFrame(col_info)
-        st.dataframe(col_info_df, use_container_width=True)
-        
-        # Amostra dos dados
-        st.subheader("📋 Amostra dos Dados")
-        st.dataframe(df.head(20), use_container_width=True)
+        # Botão de predição
+        if st.button("🔮 Realizar Predição", type="primary"):
+            # Preparar dados para predição
+            dados_paciente = {
+                'especie': especie,
+                'idade_anos': idade,
+                'sexo': sexo,
+                'hemoglobina': hemoglobina,
+                'hematocrito': hematocrito,
+                'leucocitos': leucocitos,
+                'glicose': glicose,
+                'ureia': ureia,
+                'creatinina': creatinina,
+                'alt': alt,
+                'ast': ast,
+                'febre': 1 if febre else 0,
+                'apatia': 1 if apatia else 0,
+                'perda_peso': 1 if perda_peso else 0,
+                'vomito': 1 if vomito else 0,
+                'diarreia': 1 if diarreia else 0,
+                'tosse': 1 if tosse else 0,
+                'letargia': 1 if letargia else 0,
+                'feridas_cutaneas': 1 if feridas_cutaneas else 0,
+                'poliuria': 1 if poliuria else 0,
+                'polidipsia': 1 if polidipsia else 0
+            }
+            
+            # Fazer predição
+            try:
+                # Aqui você implementaria a lógica de predição
+                st.success("🎯 Predição realizada com sucesso!")
+                st.info("💡 Implementação da predição em desenvolvimento...")
+                
+            except Exception as e:
+                st.error(f"❌ Erro na predição: {str(e)}")
     
     else:
-        st.error("❌ Dataset não carregado")
+        st.warning("⚠️ Nenhum modelo treinado. Por favor, treine um modelo primeiro na aba 'Treinar Modelo'.")
 
-st.markdown("---")
+elif pagina == "📈 Estatísticas":
+    st.header("📈 Estatísticas Detalhadas")
+    
+    # Estatísticas descritivas
+    st.subheader("📊 Estatísticas Descritivas")
+    
+    numeric_cols = df.select_dtypes(include=[np.number]).columns
+    if len(numeric_cols) > 0:
+        st.dataframe(df[numeric_cols].describe(), use_container_width=True)
+    
+    # Distribuições
+    st.subheader("📈 Distribuições")
+    
+    # Selecionar variável para análise
+    if len(numeric_cols) > 0:
+        var_analise = st.selectbox("Selecione uma variável para análise", numeric_cols)
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # Histograma
+            fig = px.histogram(df, x=var_analise, nbins=30, title=f"Distribuição de {var_analise}")
+            st.plotly_chart(fig, use_container_width=True)
+        
+        with col2:
+            # Box plot
+            fig = px.box(df, y=var_analise, title=f"Box Plot de {var_analise}")
+            st.plotly_chart(fig, use_container_width=True)
+    
+    # Análise por diagnóstico
+    if 'diagnostico' in df.columns and len(numeric_cols) > 0:
+        st.subheader("🏥 Análise por Diagnóstico")
+        
+        diag_selecionado = st.selectbox("Selecione um diagnóstico", df['diagnostico'].unique())
+        df_diag = df[df['diagnostico'] == diag_selecionado]
+        
+        st.info(f"📊 Mostrando {len(df_diag)} casos de {diag_selecionado}")
+        
+        if len(df_diag) > 0:
+            # Estatísticas do diagnóstico selecionado
+            st.dataframe(df_diag[numeric_cols].describe(), use_container_width=True)
+
+elif pagina == "📁 Informações do Dataset":
+    st.header("📁 Informações do Dataset")
+    
+    # Informações básicas
+    st.subheader("📊 Informações Básicas")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.metric("Total de Registros", len(df))
+        st.metric("Total de Colunas", len(df.columns))
+        st.metric("Memória Usada", f"{df.memory_usage(deep=True).sum() / 1024 / 1024:.2f} MB")
+    
+    with col2:
+        st.metric("Registros com Valores Nulos", df.isnull().sum().sum())
+        st.metric("Tipos de Dados Únicos", df.dtypes.nunique())
+        st.metric("Colunas Numéricas", len(df.select_dtypes(include=[np.number]).columns))
+    
+    # Estrutura do dataset
+    st.subheader("🏗️ Estrutura do Dataset")
+    
+    # Tipos de dados
+    st.write("**Tipos de Dados:**")
+    tipos_dados = df.dtypes.value_counts()
+    st.dataframe(tipos_dados.reset_index().rename(columns={'index': 'Tipo', 0: 'Quantidade'}), use_container_width=True)
+    
+    # Colunas e tipos
+    st.write("**Colunas e Tipos:**")
+    colunas_info = pd.DataFrame({
+        'Coluna': df.columns,
+        'Tipo': df.dtypes,
+        'Valores Únicos': df.nunique(),
+        'Valores Nulos': df.isnull().sum()
+    })
+    st.dataframe(colunas_info, use_container_width=True)
+    
+    # Amostra dos dados
+    st.subheader("👀 Amostra dos Dados")
+    st.write("**Primeiras 10 linhas:**")
+    st.dataframe(df.head(10), use_container_width=True)
+    
+    # Valores únicos por coluna categórica
+    st.subheader("📋 Valores Únicos")
+    
+    categorical_cols = df.select_dtypes(include=['object']).columns
+    if len(categorical_cols) > 0:
+        for col in categorical_cols:
+            if df[col].nunique() <= 20:  # Só mostrar se não tiver muitos valores únicos
+                st.write(f"**{col}:** {list(df[col].unique())}")
+            else:
+                st.write(f"**{col}:** {df[col].nunique()} valores únicos")
 
 # Footer
-st.markdown("""
-<div style='text-align: center; color: #666; padding: 20px;'>
-    <p>🐾 VetDiagnosisAI v1.0 | Desenvolvido para profissionais veterinários e pesquisadores</p>
-    <p>⚠️ Ferramenta educacional - Não substitui avaliação clínica profissional</p>
-</div>
-""", unsafe_allow_html=True)
-
+st.markdown("---")
+st.markdown(
+    '<p style="text-align: center; color: #666;">🐾 VetDiagnosisAI - Sistema Inteligente de Apoio ao Diagnóstico Veterinário</p>',
+    unsafe_allow_html=True
+)
