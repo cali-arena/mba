@@ -10,11 +10,14 @@ from pathlib import Path
 
 # Configuração da página
 st.set_page_config(
-    page_title="VetDiagnosisAI",
+    page_title="VetDiagnosisAI v2.0 - ML Veterinário Completo",
     page_icon="🐾",
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# FORÇAR ATUALIZAÇÃO - VERSÃO 2.0
+st.info("🚀 **VET DIAGNOSIS AI v2.0 - SISTEMA ATUALIZADO COM ML COMPLETO!** 🚀")
 
 # CSS customizado
 st.markdown("""
@@ -202,7 +205,7 @@ def gerar_dados_sinteticos():
     return df
 
 # CARREGAR DADOS REAIS DIRETAMENTE - SEMPRE!
-st.info("🔄 Carregando dados reais...")
+st.info("🔄 **VERSÃO 2.0 - CARREGANDO DADOS REAIS COM ML COMPLETO...**")
 
 # Tentar carregar datasets reais diretamente
 data_path = Path("data")
@@ -548,7 +551,8 @@ elif pagina == "📊 Análise de Dados":
         st.dataframe(correlacao)
 
 elif pagina == "🤖 Predição de Diagnóstico":
-    st.header("🤖 Sistema de Machine Learning Veterinário")
+    st.header("🤖 Sistema de Machine Learning Veterinário v2.0")
+    st.success("🎉 **ATUALIZADO!** Sistema completo de ML com feature engineering avançado!")
     
     # Verificar se temos dados suficientes para ML
     if 'diagnostico' not in df.columns:
