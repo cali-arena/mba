@@ -10,6 +10,8 @@ import joblib
 import pickle
 from pathlib import Path
 from datetime import datetime
+import sys
+import traceback
 
 # Configuração da página
 st.set_page_config(
@@ -19,27 +21,71 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# CSS personalizado para interface limpa
+# CSS personalizado para interface limpa e moderna
 st.markdown("""
 <style>
     .main-header {
         text-align: center;
         color: #1f77b4;
         margin-bottom: 2rem;
+        font-size: 2.5rem;
+        font-weight: bold;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
     }
     .prediction-box {
-        background-color: #f0f2f6;
-        padding: 1rem;
-        border-radius: 10px;
-        border-left: 5px solid #1f77b4;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 15px;
         margin: 1rem 0;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        text-align: center;
     }
     .metric-box {
-        background-color: #e8f4f8;
-        padding: 0.5rem;
-        border-radius: 5px;
+        background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+        padding: 1rem;
+        border-radius: 10px;
         text-align: center;
         margin: 0.5rem 0;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        border: 1px solid #ffb347;
+    }
+    .form-section {
+        background-color: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 10px;
+        margin: 1rem 0;
+        border-left: 4px solid #28a745;
+    }
+    .symptom-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 10px;
+        margin: 1rem 0;
+    }
+    .stButton > button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        padding: 0.75rem 2rem;
+        font-size: 1.1rem;
+        font-weight: bold;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+    .stButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    }
+    .success-message {
+        background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
+        color: white;
+        padding: 1rem;
+        border-radius: 10px;
+        margin: 1rem 0;
+        text-align: center;
+        font-weight: bold;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -55,7 +101,8 @@ def carregar_modelo():
     try:
         model_path = Path("models/gb_optimized_model.pkl")
         if model_path.exists():
-            model_data = joblib.load(model_path)
+            with open(model_path, 'rb') as f:
+                model_data = joblib.load(f)
             return model_data
         else:
             return None
@@ -63,12 +110,18 @@ def carregar_modelo():
         st.error(f"Erro ao carregar modelo: {e}")
         return None
 
-# Carregar modelo
-model_data = carregar_modelo()
-
-if model_data is None:
-    st.error("❌ Modelo não encontrado! Por favor, treine o modelo primeiro no app gerencial.")
-    st.info("📧 Entre em contato com o administrador do sistema.")
+# Carregar modelo com tratamento de erro
+try:
+    model_data = carregar_modelo()
+    
+    if model_data is None:
+        st.error("❌ Modelo não encontrado! Por favor, treine o modelo primeiro no app gerencial.")
+        st.info("📧 Entre em contato com o administrador do sistema.")
+        st.stop()
+        
+except Exception as e:
+    st.error(f"❌ Erro ao carregar o modelo: {str(e)}")
+    st.code(traceback.format_exc())
     st.stop()
 
 # Extrair componentes do modelo
@@ -104,6 +157,7 @@ st.subheader("🔍 Predição de Diagnóstico")
 col1, col2 = st.columns(2)
 
 with col1:
+    st.markdown('<div class="form-section">', unsafe_allow_html=True)
     st.markdown("**📋 Dados Básicos do Animal**")
     
     especie = st.selectbox(
@@ -132,8 +186,10 @@ with col1:
         options=["M", "F"],
         help="Sexo do animal"
     )
+    st.markdown('</div>', unsafe_allow_html=True)
 
 with col2:
+    st.markdown('<div class="form-section">', unsafe_allow_html=True)
     st.markdown("**🧪 Exames Laboratoriais**")
     
     hemoglobina = st.number_input(
@@ -171,11 +227,13 @@ with col2:
         step=1.0,
         help="Nível de glicose"
     )
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # Segunda linha de exames
 col3, col4 = st.columns(2)
 
 with col3:
+    st.markdown('<div class="form-section">', unsafe_allow_html=True)
     st.markdown("**🔬 Mais Exames**")
     
     ureia = st.number_input(
@@ -204,8 +262,10 @@ with col3:
         step=1.0,
         help="Alanina aminotransferase"
     )
+    st.markdown('</div>', unsafe_allow_html=True)
 
 with col4:
+    st.markdown('<div class="form-section">', unsafe_allow_html=True)
     st.markdown("**🏥 Sintomas Clínicos**")
     
     # Sintomas como checkboxes
@@ -219,6 +279,7 @@ with col4:
     feridas_cutaneas = st.checkbox("Feridas Cutâneas")
     poliuria = st.checkbox("Poliúria")
     polidipsia = st.checkbox("Polidipsia")
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # Botão de predição
 if st.button("🔍 Realizar Predição", type="primary", use_container_width=True):
@@ -291,7 +352,7 @@ if st.button("🔍 Realizar Predição", type="primary", use_container_width=Tru
         }
         
         # Salvar log (implementar sistema de logging posteriormente)
-        st.success("✅ Predição realizada com sucesso!")
+        st.markdown('<div class="success-message">✅ Predição realizada com sucesso!</div>', unsafe_allow_html=True)
         
     except Exception as e:
         st.error(f"❌ Erro na predição: {e}")
