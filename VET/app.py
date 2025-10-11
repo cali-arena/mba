@@ -59,7 +59,7 @@ if 'target_names' not in st.session_state:
     st.session_state.target_names = None
 
 # Função para carregar dataset automaticamente
-@st.cache_data(ttl=3600)  # Cache por 1 hora
+# @st.cache_data(ttl=3600)  # Cache desabilitado para forçar atualização
 def carregar_dataset_fixo():
     """Carrega o dataset de forma fixa e em cache"""
     try:
@@ -135,27 +135,61 @@ def carregar_dataset_fixo():
         st.error(f"❌ Erro ao carregar dataset: {str(e)}")
         return None
 
-# Carregar dataset automaticamente SEMPRE
+# CARREGAR DADOS REAIS DIRETAMENTE - SEMPRE!
 if st.session_state.df_main is None:
-    # Carregar dados imediatamente sem spinner para melhor UX
-    df_auto = carregar_dataset_fixo()
-    if df_auto is not None:
-        st.session_state.df_main = df_auto
+    st.info("🔄 Carregando dados reais...")
+    
+    # Tentar carregar datasets reais diretamente
+    data_path = Path("data")
+    df_real = None
+    dataset_carregado = None
+    
+    # Lista de datasets reais em ordem de prioridade
+    real_datasets = [
+        'veterinary_complete_real_dataset.csv',  # 800 registros
+        'clinical_veterinary_data.csv',          # 500 registros
+        'veterinary_master_dataset.csv',         # 500 registros
+        'veterinary_realistic_dataset.csv',      # 1280 registros
+        'laboratory_complete_panel.csv',         # 300 registros
+        'uci_horse_colic.csv',                   # 368 registros
+        'exemplo_vet.csv'                        # 300 registros (fallback)
+    ]
+    
+    # Tentar carregar cada dataset até encontrar um
+    for dataset_name in real_datasets:
+        dataset_path = data_path / dataset_name
+        if dataset_path.exists():
+            try:
+                df_real = pd.read_csv(dataset_path)
+                dataset_carregado = dataset_name
+                st.success(f"✅ Dataset carregado: {dataset_name} ({len(df_real)} registros)")
+                break
+            except Exception as e:
+                st.error(f"❌ Erro ao carregar {dataset_name}: {e}")
+                continue
+    
+    # Se não conseguiu carregar nenhum dataset real, usar função de fallback
+    if df_real is None or len(df_real) == 0:
+        st.warning("⚠️ Não foi possível carregar datasets reais. Usando função de fallback...")
+        df_real = carregar_dataset_fixo()
+        dataset_carregado = "fallback"
+    
+    # Verificar se os dados foram carregados
+    if df_real is not None and len(df_real) > 0:
+        st.session_state.df_main = df_real
         st.session_state.dataset_carregado_auto = True
         st.session_state.dataset_sempre_carregado = True
         st.session_state.dados_prontos = True
+        
+        # Adicionar informações de debug
+        import datetime
+        st.session_state.dataset_source = dataset_carregado
+        st.session_state.dataset_timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     else:
         st.session_state.dados_prontos = False
-        st.error("❌ Não foi possível carregar dataset automaticamente")
+        st.error("❌ Erro crítico: Não foi possível carregar nenhum dataset!")
 else:
     st.session_state.dados_prontos = True
-
-# Garantir que sempre temos dados
-if st.session_state.df_main is None:
-    df_auto = carregar_dataset_fixo()
-    if df_auto is not None:
-        st.session_state.df_main = df_auto
-        st.session_state.dados_prontos = True
 
 # Sidebar com informações
 with st.sidebar:
@@ -166,7 +200,15 @@ with st.sidebar:
     # Status do dataset (sempre carregado)
     st.subheader("📊 Status dos Dados")
     if st.session_state.df_main is not None:
-        st.success(f"✅ Dataset sempre carregado: {len(st.session_state.df_main)} registros")
+        st.success(f"✅ Dataset carregado: {len(st.session_state.df_main)} registros")
+        
+        # Mostrar status do dataset carregado
+        if len(st.session_state.df_main) >= 500:
+            st.success(f"🎉 Dataset real carregado! ({len(st.session_state.df_main)} registros)")
+        elif len(st.session_state.df_main) >= 300:
+            st.warning(f"⚠️ Dataset médio carregado ({len(st.session_state.df_main)} registros)")
+        else:
+            st.error(f"❌ Dataset pequeno detectado ({len(st.session_state.df_main)} registros)")
         
         # Mostrar informações do dataset
         if hasattr(st.session_state.df_main, 'columns'):
@@ -178,8 +220,19 @@ with st.sidebar:
                 especies = st.session_state.df_main['especie'].nunique()
                 st.caption(f"🐾 Espécies: {especies}")
         
-        # Mostrar que está sempre disponível
-        st.info("🔄 **Dataset carregado automaticamente** - Sempre disponível!")
+        # Mostrar informações de debug sobre o dataset
+        if hasattr(st.session_state, 'dataset_source'):
+            st.success(f"📁 Dataset: {st.session_state.dataset_source}")
+        if hasattr(st.session_state, 'dataset_timestamp'):
+            st.caption(f"⏰ Carregado em: {st.session_state.dataset_timestamp}")
+        
+        # Mostrar informações básicas sobre arquivos disponíveis
+        data_path = Path("data")
+        if data_path.exists():
+            csv_files = list(data_path.glob("*.csv"))
+            st.info(f"📁 {len(csv_files)} arquivos CSV disponíveis")
+        else:
+            st.error("❌ Pasta 'data' não encontrada!")
         
         # Botão para forçar recarregamento
         if st.button("🔄 Recarregar Dataset", use_container_width=True):
