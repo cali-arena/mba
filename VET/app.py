@@ -63,8 +63,48 @@ if 'target_names' not in st.session_state:
 def carregar_dataset_fixo():
     """Carrega o dataset de forma fixa e em cache"""
     try:
-        from vetlib.data_io import carregar_dataset_exemplo
-        return carregar_dataset_exemplo()
+        import pandas as pd
+        import numpy as np
+        from pathlib import Path
+        
+        # Tentar carregar dataset da pasta data
+        data_path = Path("data")
+        csv_files = list(data_path.glob("*.csv")) if data_path.exists() else []
+        
+        if csv_files:
+            # Carregar o primeiro CSV encontrado
+            df = pd.read_csv(csv_files[0])
+            return df
+        
+        # Se não encontrar arquivos, criar dados de exemplo
+        np.random.seed(42)
+        n_samples = 100
+        
+        # Criar dados sintéticos
+        data = {
+            'id': range(1, n_samples + 1),
+            'especie': np.random.choice(['Cão', 'Gato'], n_samples),
+            'raca': np.random.choice(['SRD', 'Pastor', 'Siames', 'Persa'], n_samples),
+            'idade_anos': np.random.uniform(1, 15, n_samples).round(1),
+            'sexo': np.random.choice(['M', 'F'], n_samples),
+            'hemoglobina': np.random.normal(12, 2, n_samples).round(1),
+            'hematocrito': np.random.normal(40, 5, n_samples).round(1),
+            'leucocitos': np.random.normal(8000, 2000, n_samples).round(0),
+            'glicose': np.random.normal(100, 20, n_samples).round(1),
+            'ureia': np.random.normal(30, 10, n_samples).round(1),
+            'creatinina': np.random.normal(1.2, 0.3, n_samples).round(2),
+            'temperatura_retal': np.random.normal(38.5, 0.5, n_samples).round(1),
+            'febre': np.random.choice([0, 1], n_samples),
+            'apatia': np.random.choice([0, 1], n_samples),
+            'perda_peso': np.random.choice([0, 1], n_samples),
+            'vomito': np.random.choice([0, 1], n_samples),
+            'diarreia': np.random.choice([0, 1], n_samples),
+            'diagnostico': np.random.choice(['Normal', 'Infecção', 'Doença Renal', 'Diabetes'], n_samples)
+        }
+        
+        df = pd.DataFrame(data)
+        return df
+        
     except Exception as e:
         st.error(f"❌ Erro ao carregar dataset: {str(e)}")
         return None

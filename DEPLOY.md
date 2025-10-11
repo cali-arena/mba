@@ -40,12 +40,14 @@ https://[your-app-name].streamlit.app
 2. Selecione:
    - **Repository**: `cali-arena/mba`
    - **Branch**: `main`
-   - **Main file path**: `VET/app.py`
+   - **Main file path**: `VET/app_simple.py` ⭐ **Recomendado**
 3. Clique em "**Deploy!**"
 
-**Nota**: Como o VET tem seu próprio `requirements.txt` em `VET/requirements.txt`, você pode precisar:
-- Copiar as dependências extras para o `requirements.txt` raiz, OU
-- Configurar o Python dependencies file path para `VET/requirements.txt`
+**Versões Disponíveis:**
+- `VET/app_simple.py` - ✅ **Versão Simplificada** (Recomendada)
+- `VET/app.py` - Versão Completa (pode ter problemas de dependências)
+
+**Nota**: A versão simplificada usa dados sintéticos e não precisa de arquivos externos!
 
 ---
 

@@ -38,6 +38,13 @@ Sistema completo de diagnóstico veterinário com IA e análise de dados clínic
 
 #### 🚀 Como Executar
 
+**Versão Simplificada (Recomendada para Deploy):**
+```bash
+cd VET
+streamlit run app_simple.py
+```
+
+**Versão Completa:**
 ```bash
 cd VET
 streamlit run app.py
@@ -50,6 +57,7 @@ streamlit run app.py
 - Upload de dados
 - Treinamento de modelos
 - Visualizações interativas
+- **Dados sintéticos incluídos** (não precisa de arquivos externos)
 
 ## 📦 Instalação
 
