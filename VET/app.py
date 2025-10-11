@@ -923,49 +923,49 @@ elif pagina == "🤖 Treinar Modelo":
                 fig.update_layout(height=500)
                 st.plotly_chart(fig, use_container_width=True)
                 
-                        # Melhor modelo
-                        best_model_name = results_df.iloc[0]['Modelo']
-                        best_model = results[best_model_name]['model']
-                        best_accuracy = float(results_df.iloc[0]['Acurácia'])
-                        best_score_total = float(results_df.iloc[0]['Score Total'])
-                        
-                        st.success(f"🏆 **Melhor Modelo:** {best_model_name}")
-                        st.info(f"📊 **Acurácia:** {best_accuracy:.3f} | **Score Total:** {best_score_total:.3f}")
-                        
-                        # Ensemble dos top 3 modelos para melhorar acurácia
-                        st.subheader("🎯 Ensemble dos Top 3 Modelos")
-                        
-                        top_3_models = []
-                        top_3_names = []
-                        
-                        for i, (_, row) in enumerate(results_df.head(3).iterrows()):
-                            model_name = row['Modelo']
-                            if results[model_name]['model'] is not None:
-                                top_3_models.append(results[model_name]['model'])
-                                top_3_names.append(model_name)
-                        
-                        if len(top_3_models) >= 2:
-                            # Criar ensemble voting classifier
-                            from sklearn.ensemble import VotingClassifier
-                            
-                            ensemble = VotingClassifier(
-                                estimators=[(name, model) for name, model in zip(top_3_names, top_3_models)],
-                                voting='soft'
-                            )
-                            
-                            # Treinar ensemble
-                            ensemble.fit(X_train_scaled, y_train)
-                            ensemble_pred = ensemble.predict(X_test_scaled)
-                            ensemble_accuracy = accuracy_score(y_test, ensemble_pred)
-                            ensemble_f1 = f1_score(y_test, ensemble_pred, average='macro')
-                            
-                            st.success(f"🎯 **Ensemble Accuracy:** {ensemble_accuracy:.3f}")
-                            st.info(f"🎯 **Ensemble F1-Score:** {ensemble_f1:.3f}")
-                            
-                            if ensemble_accuracy > best_accuracy:
-                                st.success(f"🚀 **Melhoria:** Ensemble é {ensemble_accuracy - best_accuracy:.3f} pontos melhor que o melhor modelo individual!")
-                            else:
-                                st.info("ℹ️ Ensemble não melhorou significativamente o melhor modelo individual.")
+                # Melhor modelo
+                best_model_name = results_df.iloc[0]['Modelo']
+                best_model = results[best_model_name]['model']
+                best_accuracy = float(results_df.iloc[0]['Acurácia'])
+                best_score_total = float(results_df.iloc[0]['Score Total'])
+                
+                st.success(f"🏆 **Melhor Modelo:** {best_model_name}")
+                st.info(f"📊 **Acurácia:** {best_accuracy:.3f} | **Score Total:** {best_score_total:.3f}")
+                
+                # Ensemble dos top 3 modelos para melhorar acurácia
+                st.subheader("🎯 Ensemble dos Top 3 Modelos")
+                
+                top_3_models = []
+                top_3_names = []
+                
+                for i, (_, row) in enumerate(results_df.head(3).iterrows()):
+                    model_name = row['Modelo']
+                    if results[model_name]['model'] is not None:
+                        top_3_models.append(results[model_name]['model'])
+                        top_3_names.append(model_name)
+                
+                if len(top_3_models) >= 2:
+                    # Criar ensemble voting classifier
+                    from sklearn.ensemble import VotingClassifier
+                    
+                    ensemble = VotingClassifier(
+                        estimators=[(name, model) for name, model in zip(top_3_names, top_3_models)],
+                        voting='soft'
+                    )
+                    
+                    # Treinar ensemble
+                    ensemble.fit(X_train_scaled, y_train)
+                    ensemble_pred = ensemble.predict(X_test_scaled)
+                    ensemble_accuracy = accuracy_score(y_test, ensemble_pred)
+                    ensemble_f1 = f1_score(y_test, ensemble_pred, average='macro')
+                    
+                    st.success(f"🎯 **Ensemble Accuracy:** {ensemble_accuracy:.3f}")
+                    st.info(f"🎯 **Ensemble F1-Score:** {ensemble_f1:.3f}")
+                    
+                    if ensemble_accuracy > best_accuracy:
+                        st.success(f"🚀 **Melhoria:** Ensemble é {ensemble_accuracy - best_accuracy:.3f} pontos melhor que o melhor modelo individual!")
+                    else:
+                        st.info("ℹ️ Ensemble não melhorou significativamente o melhor modelo individual.")
                 
                 # Mostrar top 3 modelos
                 st.subheader("🥇 Top 3 Modelos")
