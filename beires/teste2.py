@@ -1,5 +1,4 @@
 def solution(pin):
-    # Define adjacent digits for each key
     adjacent = {
         '0': ['0', '8'],
         '1': ['1', '2', '4'],
@@ -13,7 +12,9 @@ def solution(pin):
         '9': ['9', '6', '8']
     }
     
-    # Generate all possible combinations
+    if not pin:
+        return []
+    
     result = ['']
     
     for digit in pin:
@@ -23,7 +24,6 @@ def solution(pin):
                 new_result.append(combination + adjacent_digit)
         result = new_result
     
-    # Remove duplicates and sort as integers
     result = list(set(result))
     result = [str(x) for x in sorted([int(x) for x in result])]
     
