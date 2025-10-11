@@ -548,79 +548,266 @@ elif pagina == "📊 Análise de Dados":
         st.dataframe(correlacao)
 
 elif pagina == "🤖 Predição de Diagnóstico":
-    st.header("🤖 Predição de Diagnóstico")
+    st.header("🤖 Sistema de Machine Learning Veterinário")
     
-    st.info("💡 Esta é uma demonstração. Para uma versão completa com ML, veja o sistema completo.")
+    # Verificar se temos dados suficientes para ML
+    if 'diagnostico' not in df.columns:
+        st.error("❌ Coluna 'diagnostico' não encontrada. Não é possível treinar modelos.")
+        st.stop()
     
-    # Formulário para entrada de dados
-    st.subheader("📝 Dados do Paciente")
+    # Preparar dados para ML
+    st.subheader("🔧 Preparação dos Dados")
     
-    with st.form("form_diagnostico"):
+    # Feature Engineering Avançado
+    df_ml = df.copy()
+    
+    # 1. Codificação de variáveis categóricas
+    from sklearn.preprocessing import LabelEncoder, StandardScaler
+    le_especie = LabelEncoder()
+    le_sexo = LabelEncoder()
+    le_diagnostico = LabelEncoder()
+    
+    if 'especie' in df_ml.columns:
+        df_ml['especie_encoded'] = le_especie.fit_transform(df_ml['especie'])
+    if 'sexo' in df_ml.columns:
+        df_ml['sexo_encoded'] = le_sexo.fit_transform(df_ml['sexo'])
+    
+    df_ml['diagnostico_encoded'] = le_diagnostico.fit_transform(df_ml['diagnostico'])
+    
+    # 2. Criar features derivadas
+    if 'idade_anos' in df_ml.columns:
+        df_ml['idade_categoria'] = pd.cut(df_ml['idade_anos'], bins=[0, 2, 7, 15, 100], labels=['Filhote', 'Adulto Jovem', 'Adulto', 'Idoso'])
+        df_ml['idade_categoria_encoded'] = LabelEncoder().fit_transform(df_ml['idade_categoria'])
+    
+    # 3. Features de exames laboratoriais combinados
+    exames_cols = ['hemoglobina', 'hematocrito', 'leucocitos', 'glicose', 'ureia', 'creatinina']
+    exames_disponiveis = [col for col in exames_cols if col in df_ml.columns]
+    
+    if len(exames_disponiveis) >= 2:
+        # Criar índices combinados
+        if 'hemoglobina' in df_ml.columns and 'hematocrito' in df_ml.columns:
+            df_ml['indice_anemia'] = df_ml['hemoglobina'] / df_ml['hematocrito']
+        if 'ureia' in df_ml.columns and 'creatinina' in df_ml.columns:
+            df_ml['indice_renal'] = df_ml['ureia'] / df_ml['creatinina']
+    
+    # 4. Features de sintomas combinados
+    sintomas_cols = ['febre', 'apatia', 'perda_peso', 'vomito', 'diarreia', 'tosse', 'letargia']
+    sintomas_disponiveis = [col for col in sintomas_cols if col in df_ml.columns]
+    
+    if len(sintomas_disponiveis) >= 2:
+        df_ml['total_sintomas'] = df_ml[sintomas_disponiveis].sum(axis=1)
+        df_ml['severidade_sintomas'] = pd.cut(df_ml['total_sintomas'], bins=[-1, 0, 2, 4, 10], labels=['Assintomático', 'Leve', 'Moderado', 'Severo'])
+        df_ml['severidade_sintomas_encoded'] = LabelEncoder().fit_transform(df_ml['severidade_sintomas'])
+    
+    # Selecionar features para ML
+    feature_cols = []
+    
+    # Adicionar colunas numéricas originais
+    numeric_cols = df_ml.select_dtypes(include=[np.number]).columns.tolist()
+    feature_cols.extend([col for col in numeric_cols if col not in ['diagnostico_encoded']])
+    
+    # Remover colunas com muitos valores únicos (como ID)
+    feature_cols = [col for col in feature_cols if df_ml[col].nunique() < len(df_ml) * 0.8]
+    
+    X = df_ml[feature_cols].fillna(df_ml[feature_cols].mean())
+    y = df_ml['diagnostico_encoded']
+    
+    st.success(f"✅ Dados preparados: {X.shape[0]} amostras, {X.shape[1]} features")
+    
+    # Dividir dados
+    from sklearn.model_selection import train_test_split
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+    
+    # Escalar features
+    scaler = StandardScaler()
+    X_train_scaled = scaler.fit_transform(X_train)
+    X_test_scaled = scaler.transform(X_test)
+    
+    st.info(f"📊 Divisão dos dados: {X_train.shape[0]} treino, {X_test.shape[0]} teste")
+    
+    # Treinar múltiplos modelos
+    st.subheader("🤖 Treinamento de Modelos")
+    
+    from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.svm import SVC
+    from sklearn.neighbors import KNeighborsClassifier
+    from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+    import plotly.express as px
+    import plotly.graph_objects as go
+    
+    models = {
+        'Random Forest': RandomForestClassifier(n_estimators=100, random_state=42),
+        'Gradient Boosting': GradientBoostingClassifier(random_state=42),
+        'Logistic Regression': LogisticRegression(random_state=42, max_iter=1000),
+        'SVM': SVC(random_state=42, probability=True),
+        'K-Nearest Neighbors': KNeighborsClassifier(n_neighbors=5)
+    }
+    
+    results = {}
+    
+    for name, model in models.items():
+        with st.spinner(f"Treinando {name}..."):
+            model.fit(X_train_scaled, y_train)
+            y_pred = model.predict(X_test_scaled)
+            accuracy = accuracy_score(y_test, y_pred)
+            results[name] = {
+                'model': model,
+                'accuracy': accuracy,
+                'predictions': y_pred
+            }
+    
+    # Mostrar resultados
+    st.subheader("📊 Resultados dos Modelos")
+    
+    # Tabela de resultados
+    results_df = pd.DataFrame({
+        'Modelo': list(results.keys()),
+        'Acurácia': [results[name]['accuracy'] for name in results.keys()]
+    }).sort_values('Acurácia', ascending=False)
+    
+    st.dataframe(results_df, use_container_width=True)
+    
+    # Melhor modelo
+    best_model_name = results_df.iloc[0]['Modelo']
+    best_model = results[best_model_name]['model']
+    best_accuracy = results_df.iloc[0]['Acurácia']
+    
+    st.success(f"🏆 **Melhor Modelo:** {best_model_name} com {best_accuracy:.3f} de acurácia")
+    
+    # Feature Importance (se disponível)
+    if hasattr(best_model, 'feature_importances_'):
+        st.subheader("🎯 Importância das Features")
+        
+        feature_importance = pd.DataFrame({
+            'Feature': feature_cols,
+            'Importance': best_model.feature_importances_
+        }).sort_values('Importance', ascending=False)
+        
+        fig = px.bar(feature_importance.head(10), x='Importance', y='Feature', 
+                     title='Top 10 Features Mais Importantes')
+        st.plotly_chart(fig, use_container_width=True)
+    
+    # Matriz de confusão
+    st.subheader("🔍 Matriz de Confusão")
+    
+    y_pred_best = results[best_model_name]['predictions']
+    cm = confusion_matrix(y_test, y_pred_best)
+    
+    fig = px.imshow(cm, 
+                    labels=dict(x="Predito", y="Real", color="Quantidade"),
+                    x=le_diagnostico.classes_,
+                    y=le_diagnostico.classes_,
+                    title=f"Matriz de Confusão - {best_model_name}")
+    st.plotly_chart(fig, use_container_width=True)
+    
+    # Relatório de classificação
+    st.subheader("📋 Relatório Detalhado")
+    report = classification_report(y_test, y_pred_best, target_names=le_diagnostico.classes_, output_dict=True)
+    
+    report_df = pd.DataFrame(report).transpose()
+    st.dataframe(report_df, use_container_width=True)
+    
+    # Sugestões para melhorar acurácia
+    st.subheader("💡 Sugestões para Melhorar Acurácia (>85%)")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("""
+        **🔧 Feature Engineering:**
+        - ✅ Criar mais features derivadas
+        - ✅ Combinar exames laboratoriais
+        - ✅ Agrupar sintomas por severidade
+        - ✅ Usar idade categorizada
+        - ✅ Criar índices clínicos específicos
+        """)
+    
+    with col2:
+        st.markdown("""
+        **🤖 Modelos Avançados:**
+        - ✅ XGBoost com hiperparâmetros otimizados
+        - ✅ Ensemble de múltiplos modelos
+        - ✅ Validação cruzada estratificada
+        - ✅ Balanceamento de classes
+        - ✅ Seleção de features automática
+        """)
+    
+    # Predição interativa
+    st.subheader("🔮 Predição Interativa")
+    
+    with st.form("prediction_form"):
+        st.markdown("**Insira os dados do paciente para predição:**")
+        
         col1, col2 = st.columns(2)
         
         with col1:
-            especie = st.selectbox("Espécie:", df['especie'].unique())
-            raca = st.text_input("Raça:", "SRD")
-            idade = st.number_input("Idade (anos):", 0.1, 25.0, 5.0)
-            peso = st.number_input("Peso (kg):", 0.1, 100.0, 15.0)
-            sexo = st.selectbox("Sexo:", ['M', 'F'])
+            if 'especie' in df.columns:
+                especie_pred = st.selectbox("Espécie:", df['especie'].unique())
+            if 'sexo' in df.columns:
+                sexo_pred = st.selectbox("Sexo:", df['sexo'].unique())
+            if 'idade_anos' in df.columns:
+                idade_pred = st.number_input("Idade (anos):", 0.1, 25.0, 5.0)
         
         with col2:
-            st.subheader("🔬 Exames Laboratoriais")
-            hemoglobina = st.number_input("Hemoglobina:", 5.0, 20.0, 12.0)
-            hematocrito = st.number_input("Hematócrito:", 20.0, 60.0, 40.0)
-            leucocitos = st.number_input("Leucócitos:", 2000.0, 20000.0, 8000.0)
-            glicose = st.number_input("Glicose:", 50.0, 300.0, 100.0)
-            ureia = st.number_input("Ureia:", 10.0, 100.0, 30.0)
+            if 'hemoglobina' in df.columns:
+                hemoglobina_pred = st.number_input("Hemoglobina:", 5.0, 20.0, 12.0)
+            if 'hematocrito' in df.columns:
+                hematocrito_pred = st.number_input("Hematócrito:", 20.0, 60.0, 40.0)
+            if 'glicose' in df.columns:
+                glicose_pred = st.number_input("Glicose:", 50.0, 300.0, 100.0)
         
-        st.subheader("🌡️ Sinais Vitais")
-        col3, col4 = st.columns(3)
-        
-        with col3:
-            temperatura = st.number_input("Temperatura (°C):", 35.0, 42.0, 38.5)
-        
-        with col4:
-            pulso = st.number_input("Pulso (bpm):", 60.0, 200.0, 120.0)
-        
-        st.subheader("🚨 Sintomas")
-        col5, col6 = st.columns(2)
-        
-        with col5:
-            febre = st.checkbox("Febre")
-            apatia = st.checkbox("Apatia")
-            perda_peso = st.checkbox("Perda de Peso")
-        
-        with col6:
-            vomito = st.checkbox("Vômito")
-            diarreia = st.checkbox("Diarreia")
-            tosse = st.checkbox("Tosse")
-        
-        submitted = st.form_submit_button("🔍 Analisar Diagnóstico")
+        submitted = st.form_submit_button("🔍 Predizer Diagnóstico")
         
         if submitted:
-            # Simulação de predição (versão simplificada)
-            st.success("✅ Dados recebidos! Processando...")
+            # Preparar dados para predição
+            pred_data = {}
             
-            # Lógica simples baseada em regras
-            if febre and tosse:
-                predicao = "Infecção Respiratória"
-            elif ureia > 50:
-                predicao = "Doença Renal"
-            elif glicose > 150:
-                predicao = "Diabetes"
-            elif vomito and diarreia:
-                predicao = "Problema Gastrointestinal"
-            elif apatia and perda_peso:
-                predicao = "Problema Sistêmico"
-            else:
-                predicao = "Normal"
+            for col in feature_cols:
+                if col == 'especie_encoded' and 'especie' in df.columns:
+                    pred_data[col] = le_especie.transform([especie_pred])[0]
+                elif col == 'sexo_encoded' and 'sexo' in df.columns:
+                    pred_data[col] = le_sexo.transform([sexo_pred])[0]
+                elif col == 'idade_anos':
+                    pred_data[col] = idade_pred
+                elif col == 'hemoglobina':
+                    pred_data[col] = hemoglobina_pred
+                elif col == 'hematocrito':
+                    pred_data[col] = hematocrito_pred
+                elif col == 'glicose':
+                    pred_data[col] = glicose_pred
+                else:
+                    # Usar valor médio para features não especificadas
+                    pred_data[col] = X[col].mean()
             
-            st.success(f"🎯 **Diagnóstico Predito:** {predicao}")
+            # Converter para DataFrame e escalar
+            pred_df = pd.DataFrame([pred_data])
+            pred_scaled = scaler.transform(pred_df)
             
-            # Mostrar estatísticas do diagnóstico predito
-            if predicao in df['diagnostico'].values:
-                casos_similares = df[df['diagnostico'] == predicao]
-                st.info(f"📊 Encontramos {len(casos_similares)} casos similares no banco de dados")
+            # Fazer predição
+            prediction = best_model.predict(pred_scaled)[0]
+            prediction_proba = best_model.predict_proba(pred_scaled)[0]
+            
+            # Mostrar resultado
+            diagnostico_predito = le_diagnostico.inverse_transform([prediction])[0]
+            confianca = prediction_proba.max()
+            
+            st.success(f"🎯 **Diagnóstico Predito:** {diagnostico_predito}")
+            st.info(f"📊 **Confiança:** {confianca:.2%}")
+            
+            # Mostrar probabilidades de todos os diagnósticos
+            proba_df = pd.DataFrame({
+                'Diagnóstico': le_diagnostico.classes_,
+                'Probabilidade': prediction_proba
+            }).sort_values('Probabilidade', ascending=False)
+            
+            st.subheader("📈 Probabilidades de Todos os Diagnósticos")
+            st.dataframe(proba_df, use_container_width=True)
+            
+            # Gráfico de probabilidades
+            fig = px.bar(proba_df, x='Probabilidade', y='Diagnóstico', 
+                        title='Probabilidades de Diagnóstico')
+            st.plotly_chart(fig, use_container_width=True)
 
 elif pagina == "📈 Estatísticas":
     st.header("📈 Estatísticas Detalhadas")
