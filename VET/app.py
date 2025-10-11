@@ -659,7 +659,7 @@ elif pagina == "🤖 Treinar Modelo":
                     
                     if ensemble_accuracy > best_accuracy:
                         st.success(f"🚀 **Melhoria:** Ensemble é {ensemble_accuracy - best_accuracy:.3f} pontos melhor que o melhor modelo individual!")
-else:
+                    else:
                         st.info("ℹ️ Ensemble não melhorou significativamente o melhor modelo individual.")
                 
                 # Mostrar top 3 modelos
