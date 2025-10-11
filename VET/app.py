@@ -67,13 +67,39 @@ def carregar_dataset_fixo():
         import numpy as np
         from pathlib import Path
         
-        # Tentar carregar dataset da pasta data
+        # Tentar carregar dataset da pasta data - priorizar datasets reais
         data_path = Path("data")
         csv_files = list(data_path.glob("*.csv")) if data_path.exists() else []
         
         if csv_files:
-            # Carregar o primeiro CSV encontrado
-            df = pd.read_csv(csv_files[0])
+            # Priorizar datasets reais específicos
+            datasets_prioritarios = [
+                'veterinary_complete_real_dataset.csv',
+                'veterinary_master_dataset.csv', 
+                'veterinary_realistic_dataset.csv',
+                'clinical_veterinary_data.csv',
+                'laboratory_complete_panel.csv',
+                'uci_horse_colic.csv'
+            ]
+            
+            dataset_escolhido = None
+            for dataset in datasets_prioritarios:
+                if Path(data_path / dataset).exists():
+                    dataset_escolhido = data_path / dataset
+                    break
+            
+            # Se não encontrar um dos prioritários, usar o primeiro disponível
+            if not dataset_escolhido:
+                dataset_escolhido = csv_files[0]
+            
+            df = pd.read_csv(dataset_escolhido)
+            df = df.dropna(how='all')  # Remove linhas completamente vazias
+            
+            # Padronizar nomes de colunas se necessário
+            if 'especie' in df.columns:
+                df['especie'] = df['especie'].str.title()
+                df['especie'] = df['especie'].replace({'Canina': 'Cão', 'Felina': 'Gato'})
+            
             return df
         
         # Se não encontrar arquivos, criar dados de exemplo
