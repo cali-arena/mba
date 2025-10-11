@@ -852,10 +852,10 @@ elif pagina == "📈 Estatísticas":
     # Selecionar variável para análise
     if len(numeric_cols) > 0:
         var_analise = st.selectbox("Selecione uma variável para análise", numeric_cols)
+        
+        col1, col2 = st.columns(2)
 
-col1, col2 = st.columns(2)
-
-with col1:
+        with col1:
             # Histograma
             fig = px.histogram(df, x=var_analise, nbins=30, title=f"Distribuição de {var_analise}")
             st.plotly_chart(fig, use_container_width=True)
