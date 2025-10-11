@@ -48,33 +48,125 @@ st.markdown("""
 st.markdown('<div class="main-header">🐾 VetDiagnosisAI</div>', unsafe_allow_html=True)
 st.markdown('<div class="sub-header">Sistema Inteligente de Apoio ao Diagnóstico Veterinário</div>', unsafe_allow_html=True)
 
-# Função para gerar dados sintéticos
-@st.cache_data
+# Função para carregar datasets reais
+@st.cache_data(ttl=3600)  # Cache por 1 hora
+def carregar_dataset_completo():
+    """Carrega o dataset completo da pasta data"""
+    try:
+        # Tentar carregar datasets da pasta data
+        data_path = Path("data")
+        csv_files = list(data_path.glob("*.csv")) if data_path.exists() else []
+        
+        if csv_files:
+            st.info(f"📁 Encontrados {len(csv_files)} arquivos CSV na pasta data")
+            
+            # Priorizar datasets específicos
+            datasets_prioritarios = [
+                'veterinary_complete_real_dataset.csv',
+                'veterinary_master_dataset.csv', 
+                'veterinary_realistic_dataset.csv',
+                'clinical_veterinary_data.csv',
+                'laboratory_complete_panel.csv'
+            ]
+            
+            dataset_escolhido = None
+            
+            # Procurar por dataset prioritário
+            for dataset in datasets_prioritarios:
+                if Path(data_path / dataset).exists():
+                    dataset_escolhido = data_path / dataset
+                    break
+            
+            # Se não encontrar prioritário, usar o primeiro disponível
+            if not dataset_escolhido:
+                dataset_escolhido = csv_files[0]
+            
+            st.success(f"✅ Carregando: {dataset_escolhido.name}")
+            
+            # Carregar o dataset
+            df = pd.read_csv(dataset_escolhido)
+            
+            # Limpar e preparar dados
+            df = df.dropna(how='all')  # Remover linhas completamente vazias
+            
+            # Renomear colunas se necessário
+            if 'diagnostico' not in df.columns:
+                for col in df.columns:
+                    if 'diagnos' in col.lower() or 'outcome' in col.lower():
+                        df = df.rename(columns={col: 'diagnostico'})
+                        break
+            
+            # Garantir que temos pelo menos algumas colunas básicas
+            colunas_necessarias = ['id', 'especie', 'diagnostico']
+            colunas_faltando = [col for col in colunas_necessarias if col not in df.columns]
+            
+            if colunas_faltando:
+                st.warning(f"⚠️ Colunas faltando: {colunas_faltando}")
+                
+                # Criar colunas básicas se não existirem
+                if 'id' not in df.columns:
+                    df['id'] = range(1, len(df) + 1)
+                if 'especie' not in df.columns:
+                    df['especie'] = 'Cão'  # Default
+                if 'diagnostico' not in df.columns:
+                    df['diagnostico'] = 'Normal'  # Default
+            
+            st.success(f"📊 Dataset carregado: {len(df)} registros, {len(df.columns)} colunas")
+            return df
+        
+        else:
+            st.warning("⚠️ Nenhum arquivo CSV encontrado na pasta data")
+            return gerar_dados_sinteticos()
+            
+    except Exception as e:
+        st.error(f"❌ Erro ao carregar dataset: {str(e)}")
+        st.info("🔄 Usando dados sintéticos como fallback")
+        return gerar_dados_sinteticos()
+
 def gerar_dados_sinteticos():
-    """Gera dados sintéticos para demonstração"""
+    """Gera dados sintéticos como fallback"""
     np.random.seed(42)
-    n_samples = 200
+    n_samples = 500  # Mais dados sintéticos
     
-    # Criar dados sintéticos
+    # Criar dados sintéticos mais realistas
     data = {
         'id': range(1, n_samples + 1),
-        'especie': np.random.choice(['Cão', 'Gato', 'Ave'], n_samples, p=[0.6, 0.35, 0.05]),
-        'raca': np.random.choice(['SRD', 'Pastor', 'Siames', 'Persa', 'Canário'], n_samples),
-        'idade_anos': np.random.uniform(0.5, 18, n_samples).round(1),
+        'especie': np.random.choice(['Cão', 'Gato', 'Ave', 'Equino'], n_samples, p=[0.5, 0.35, 0.1, 0.05]),
+        'raca': np.random.choice(['SRD', 'Pastor Alemão', 'Golden Retriever', 'Siames', 'Persa', 'Canário', 'Puro Sangue'], n_samples),
+        'idade_anos': np.random.uniform(0.5, 20, n_samples).round(1),
         'sexo': np.random.choice(['M', 'F'], n_samples),
-        'peso_kg': np.random.uniform(1, 50, n_samples).round(1),
+        'peso_kg': np.random.uniform(1, 80, n_samples).round(1),
         
-        # Exames laboratoriais
+        # Exames laboratoriais completos
         'hemoglobina': np.random.normal(12, 2, n_samples).round(1),
         'hematocrito': np.random.normal(40, 5, n_samples).round(1),
         'leucocitos': np.random.normal(8000, 2000, n_samples).round(0),
         'plaquetas': np.random.normal(300000, 50000, n_samples).round(0),
+        'eritrocitos': np.random.normal(6, 1, n_samples).round(2),
+        'neutrofilos': np.random.normal(65, 10, n_samples).round(1),
+        'linfocitos': np.random.normal(25, 8, n_samples).round(1),
+        'monocitos': np.random.normal(5, 2, n_samples).round(1),
+        'eosinofilos': np.random.normal(3, 1.5, n_samples).round(1),
+        
+        # Bioquímica
         'glicose': np.random.normal(100, 20, n_samples).round(1),
         'ureia': np.random.normal(30, 10, n_samples).round(1),
         'creatinina': np.random.normal(1.2, 0.3, n_samples).round(2),
         'alt': np.random.normal(40, 15, n_samples).round(1),
         'ast': np.random.normal(35, 12, n_samples).round(1),
+        'fosfatase_alcalina': np.random.normal(120, 30, n_samples).round(1),
+        'fa': np.random.normal(80, 20, n_samples).round(1),
+        'ggt': np.random.normal(25, 10, n_samples).round(1),
         'proteinas_totais': np.random.normal(6.5, 1, n_samples).round(1),
+        'albumina': np.random.normal(3.5, 0.5, n_samples).round(1),
+        'globulinas': np.random.normal(3.0, 0.8, n_samples).round(1),
+        'colesterol': np.random.normal(180, 40, n_samples).round(1),
+        'triglicerideos': np.random.normal(100, 30, n_samples).round(1),
+        'bilirrubina_total': np.random.normal(0.5, 0.2, n_samples).round(2),
+        'calcio': np.random.normal(10, 1, n_samples).round(1),
+        'fosforo': np.random.normal(4.5, 1, n_samples).round(1),
+        'sodio': np.random.normal(145, 5, n_samples).round(1),
+        'potassio': np.random.normal(4.5, 0.5, n_samples).round(1),
         
         # Sinais vitais
         'temperatura_retal': np.random.normal(38.5, 0.5, n_samples).round(1),
@@ -89,21 +181,27 @@ def gerar_dados_sinteticos():
         'diarreia': np.random.choice([0, 1], n_samples, p=[0.7, 0.3]),
         'tosse': np.random.choice([0, 1], n_samples, p=[0.85, 0.15]),
         'letargia': np.random.choice([0, 1], n_samples, p=[0.8, 0.2]),
+        'feridas_cutaneas': np.random.choice([0, 1], n_samples, p=[0.9, 0.1]),
         'poliuria': np.random.choice([0, 1], n_samples, p=[0.9, 0.1]),
         'polidipsia': np.random.choice([0, 1], n_samples, p=[0.9, 0.1]),
+        'dor': np.random.choice([0, 1], n_samples, p=[0.85, 0.15]),
+        'cirurgia': np.random.choice([0, 1], n_samples, p=[0.95, 0.05]),
         
-        # Diagnóstico
+        # Diagnóstico mais realista
         'diagnostico': np.random.choice([
             'Normal', 'Infecção Respiratória', 'Doença Renal', 'Diabetes', 
-            'Problema Gastrointestinal', 'Dermatite', 'Doença Hepática'
-        ], n_samples, p=[0.4, 0.15, 0.1, 0.1, 0.1, 0.1, 0.05])
+            'Problema Gastrointestinal', 'Dermatite', 'Doença Hepática',
+            'Anemia', 'Leucemia', 'Insuficiência Cardíaca', 'Tumor',
+            'Parasitose', 'Alergia', 'Fratura', 'Doença Infecciosa'
+        ], n_samples, p=[0.3, 0.12, 0.08, 0.08, 0.08, 0.06, 0.05, 0.05, 0.03, 0.03, 0.03, 0.04, 0.03, 0.02, 0.02])
     }
     
     df = pd.DataFrame(data)
     return df
 
 # Carregar dados
-df = gerar_dados_sinteticos()
+with st.spinner("🔄 Carregando dataset..."):
+    df = carregar_dataset_completo()
 
 # Sidebar
 with st.sidebar:
@@ -113,8 +211,31 @@ with st.sidebar:
     
     st.subheader("📊 Status dos Dados")
     st.success(f"✅ Dataset carregado: {len(df)} registros")
-    st.info(f"📅 Espécies: {df['especie'].nunique()}")
+    st.info(f"📅 Colunas: {len(df.columns)}")
+    st.info(f"🐾 Espécies: {df['especie'].nunique()}")
     st.info(f"🏥 Diagnósticos: {df['diagnostico'].nunique()}")
+    
+    # Mostrar informações sobre o dataset
+    if hasattr(df, 'name') or 'veterinary' in str(df.columns):
+        st.success("📁 Dataset real carregado")
+    else:
+        st.info("🔄 Usando dados sintéticos")
+    
+    # Mostrar primeiras colunas
+    st.write("**Colunas principais:**")
+    colunas_principais = [col for col in df.columns[:10]]
+    for col in colunas_principais:
+        st.write(f"• {col}")
+    
+    if len(df.columns) > 10:
+        st.write(f"... e mais {len(df.columns) - 10} colunas")
+    
+    st.markdown("---")
+    
+    # Botão para recarregar dados
+    if st.button("🔄 Recarregar Dataset"):
+        st.cache_data.clear()
+        st.rerun()
     
     st.markdown("---")
     
@@ -123,9 +244,10 @@ with st.sidebar:
         "Escolha uma página:",
         [
             "🏠 Visão Geral",
-            "📊 Análise de Dados",
+            "📊 Análise de Dados", 
             "🤖 Predição de Diagnóstico",
-            "📈 Estatísticas"
+            "📈 Estatísticas",
+            "📁 Informações do Dataset"
         ]
     )
 
@@ -535,11 +657,154 @@ elif pagina == "📈 Estatísticas":
             mime='text/csv',
         )
 
+elif pagina == "📁 Informações do Dataset":
+    st.header("📁 Informações Detalhadas do Dataset")
+    
+    # Informações gerais
+    st.subheader("📊 Resumo Geral")
+    
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.metric("📄 Total de Registros", len(df))
+    
+    with col2:
+        st.metric("📋 Total de Colunas", len(df.columns))
+    
+    with col3:
+        valores_nulos = df.isnull().sum().sum()
+        st.metric("❌ Valores Nulos", valores_nulos)
+    
+    with col4:
+        memoria_mb = df.memory_usage(deep=True).sum() / 1024 / 1024
+        st.metric("💾 Memória (MB)", f"{memoria_mb:.2f}")
+    
+    st.markdown("---")
+    
+    # Informações sobre colunas
+    st.subheader("📋 Estrutura das Colunas")
+    
+    # Análise por tipo de coluna
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader("🔢 Colunas Numéricas")
+        colunas_numericas = df.select_dtypes(include=[np.number]).columns.tolist()
+        st.write(f"**Total:** {len(colunas_numericas)} colunas")
+        for col in colunas_numericas:
+            st.write(f"• {col}")
+    
+    with col2:
+        st.subheader("📝 Colunas Categóricas")
+        colunas_categoricas = df.select_dtypes(include=['object']).columns.tolist()
+        st.write(f"**Total:** {len(colunas_categoricas)} colunas")
+        for col in colunas_categoricas:
+            st.write(f"• {col}")
+    
+    st.markdown("---")
+    
+    # Estatísticas descritivas
+    st.subheader("📈 Estatísticas Descritivas")
+    
+    if len(colunas_numericas) > 0:
+        st.dataframe(df[colunas_numericas].describe().round(2), use_container_width=True)
+    else:
+        st.info("Nenhuma coluna numérica encontrada")
+    
+    st.markdown("---")
+    
+    # Valores únicos por coluna
+    st.subheader("🔍 Valores Únicos por Coluna")
+    
+    valores_unicos = []
+    for col in df.columns:
+        n_unicos = df[col].nunique()
+        valores_unicos.append({
+            'Coluna': col,
+            'Valores Únicos': n_unicos,
+            'Tipo': str(df[col].dtype),
+            'Valores Nulos': df[col].isnull().sum()
+        })
+    
+    df_unicos = pd.DataFrame(valores_unicos)
+    st.dataframe(df_unicos, use_container_width=True)
+    
+    st.markdown("---")
+    
+    # Amostra dos dados
+    st.subheader("👀 Amostra dos Dados")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.write("**Primeiros 5 registros:**")
+        st.dataframe(df.head(), use_container_width=True)
+    
+    with col2:
+        st.write("**Últimos 5 registros:**")
+        st.dataframe(df.tail(), use_container_width=True)
+    
+    st.markdown("---")
+    
+    # Informações sobre o arquivo
+    st.subheader("📁 Informações do Arquivo")
+    
+    # Tentar identificar o arquivo carregado
+    try:
+        data_path = Path("data")
+        if data_path.exists():
+            csv_files = list(data_path.glob("*.csv"))
+            
+            st.write("**Arquivos CSV disponíveis na pasta data:**")
+            for i, arquivo in enumerate(csv_files, 1):
+                tamanho = arquivo.stat().st_size / 1024  # KB
+                st.write(f"{i}. {arquivo.name} ({tamanho:.1f} KB)")
+            
+            # Mostrar qual foi carregado
+            st.write(f"\n**Arquivo atual carregado:** {len(df)} registros")
+            
+    except Exception as e:
+        st.info("Informações do arquivo não disponíveis")
+    
+    # Download
+    st.markdown("---")
+    st.subheader("📥 Download")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        csv = df.to_csv(index=False).encode('utf-8')
+        st.download_button(
+            label="📊 Dataset Completo",
+            data=csv,
+            file_name='dataset_completo.csv',
+            mime='text/csv',
+        )
+    
+    with col2:
+        if len(colunas_numericas) > 0:
+            csv_numerico = df[colunas_numericas].to_csv(index=False).encode('utf-8')
+            st.download_button(
+                label="🔢 Apenas Numéricas",
+                data=csv_numerico,
+                file_name='dados_numericos.csv',
+                mime='text/csv',
+            )
+    
+    with col3:
+        csv_estatisticas = df.describe().to_csv().encode('utf-8')
+        st.download_button(
+            label="📈 Estatísticas",
+            data=csv_estatisticas,
+            file_name='estatisticas.csv',
+            mime='text/csv',
+        )
+
 # Footer
 st.markdown("---")
 st.markdown("""
 <div style='text-align: center; color: #666;'>
     <p>🐾 VetDiagnosisAI - Sistema de Apoio ao Diagnóstico Veterinário</p>
-    <p>Desenvolvido para o MBA - Versão Simplificada para Demonstração</p>
+    <p>Desenvolvido para o MBA - Sistema Completo com Datasets Reais</p>
 </div>
 """, unsafe_allow_html=True)
