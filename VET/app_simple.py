@@ -49,7 +49,7 @@ st.markdown('<div class="main-header">🐾 VetDiagnosisAI</div>', unsafe_allow_h
 st.markdown('<div class="sub-header">Sistema Inteligente de Apoio ao Diagnóstico Veterinário</div>', unsafe_allow_html=True)
 
 # Função para carregar datasets reais
-@st.cache_data(ttl=60)  # Cache muito menor para forçar atualização
+# @st.cache_data(ttl=60)  # Cache desabilitado para forçar atualização
 def carregar_dataset_completo():
     """Carrega o dataset completo da pasta data"""
     try:
@@ -83,8 +83,10 @@ def carregar_dataset_completo():
             df = pd.read_csv(dataset_escolhido)
             
             # Adicionar informação sobre qual dataset foi carregado
+            import datetime
             df.attrs['dataset_source'] = dataset_escolhido.name
             df.attrs['dataset_path'] = str(dataset_escolhido)
+            df.attrs['load_timestamp'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             
             # Limpar e preparar dados
             df = df.dropna(how='all')  # Remover linhas completamente vazias
@@ -221,6 +223,8 @@ with st.sidebar:
     if hasattr(df, 'attrs') and 'dataset_source' in df.attrs:
         st.success(f"📁 Dataset: {df.attrs['dataset_source']}")
         st.caption(f"🔗 Caminho: {df.attrs['dataset_path']}")
+        if 'load_timestamp' in df.attrs:
+            st.caption(f"⏰ Carregado em: {df.attrs['load_timestamp']}")
     else:
         st.warning("⚠️ Informações do dataset não disponíveis")
     
