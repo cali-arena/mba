@@ -133,8 +133,8 @@ try:
                         dataset_source = f"dados_reais_{dataset_name}"
                         st.success(f"✅ Carregado dataset real: {dataset_name} ({len(df_real)} registros)")
                         break
-    except Exception as e:
-        st.warning(f"⚠️ Erro ao carregar dados reais: {e}")
+except Exception as e:
+    st.warning(f"⚠️ Erro ao carregar dados reais: {e}")
 
 # 2. APENAS dados reais - SEM fallback para sintéticos
 if df_real is not None and len(df_real) > 0:
