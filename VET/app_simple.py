@@ -133,30 +133,117 @@ with st.sidebar:
 if pagina == "🏠 Visão Geral":
     st.header("🏠 Visão Geral do Sistema")
     
-    col1, col2, col3 = st.columns(3)
+    # Métricas principais
+    col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        st.metric("Total de Registros", len(df))
+        st.metric("📊 Total de Registros", len(df))
     
     with col2:
-        st.metric("Espécies Únicas", df['especie'].nunique())
+        st.metric("🐾 Espécies Únicas", df['especie'].nunique())
     
     with col3:
-        st.metric("Diagnósticos Únicos", df['diagnostico'].nunique())
+        st.metric("🏥 Diagnósticos Únicos", df['diagnostico'].nunique())
+    
+    with col4:
+        st.metric("🔬 Exames Disponíveis", len([col for col in df.columns if col not in ['id', 'especie', 'raca', 'diagnostico']]))
     
     st.markdown("---")
     
-    st.subheader("📊 Distribuição por Espécie")
-    especie_counts = df['especie'].value_counts()
-    st.bar_chart(especie_counts)
+    # Distribuições com mais detalhes
+    col1, col2 = st.columns(2)
     
-    st.subheader("🏥 Distribuição de Diagnósticos")
-    diag_counts = df['diagnostico'].value_counts()
-    st.bar_chart(diag_counts)
+    with col1:
+        st.subheader("🐾 Distribuição por Espécie")
+        especie_counts = df['especie'].value_counts()
+        
+        # Mostrar contagens
+        st.write("**Contagens:**")
+        for especie, count in especie_counts.items():
+            percentage = (count / len(df)) * 100
+            st.write(f"• {especie}: {count} ({percentage:.1f}%)")
+        
+        # Gráfico
+        st.bar_chart(especie_counts)
     
-    # Mostrar amostra dos dados
-    st.subheader("📋 Amostra dos Dados")
-    st.dataframe(df.head(10))
+    with col2:
+        st.subheader("🏥 Distribuição de Diagnósticos")
+        diag_counts = df['diagnostico'].value_counts()
+        
+        # Mostrar contagens
+        st.write("**Top 5 Diagnósticos:**")
+        for diag, count in diag_counts.head().items():
+            percentage = (count / len(df)) * 100
+            st.write(f"• {diag}: {count} ({percentage:.1f}%)")
+        
+        # Gráfico
+        st.bar_chart(diag_counts)
+    
+    st.markdown("---")
+    
+    # Estatísticas adicionais
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader("📊 Estatísticas de Idade")
+        idade_stats = df['idade_anos'].describe()
+        st.write(f"**Idade Média:** {idade_stats['mean']:.1f} anos")
+        st.write(f"**Idade Mínima:** {idade_stats['min']:.1f} anos")
+        st.write(f"**Idade Máxima:** {idade_stats['max']:.1f} anos")
+        
+        # Histograma de idade
+        st.bar_chart(df['idade_anos'].value_counts().sort_index())
+    
+    with col2:
+        st.subheader("🌡️ Sinais Vitais Médios")
+        temp_media = df['temperatura_retal'].mean()
+        pulso_medio = df['pulso'].mean()
+        freq_media = df['freq_respiratoria'].mean()
+        
+        st.write(f"**Temperatura Média:** {temp_media:.1f}°C")
+        st.write(f"**Pulso Médio:** {pulso_medio:.0f} bpm")
+        st.write(f"**Frequência Respiratória:** {freq_media:.0f} rpm")
+        
+        # Gráfico de temperatura por espécie
+        temp_por_especie = df.groupby('especie')['temperatura_retal'].mean()
+        st.bar_chart(temp_por_especie)
+    
+    st.markdown("---")
+    
+    # Amostra dos dados com mais informações
+    st.subheader("📋 Amostra dos Dados (Primeiros 10 Registros)")
+    
+    # Selecionar colunas principais para exibir
+    colunas_principais = ['id', 'especie', 'raca', 'idade_anos', 'sexo', 'diagnostico', 
+                         'temperatura_retal', 'febre', 'vomito', 'diarreia']
+    
+    if all(col in df.columns for col in colunas_principais):
+        st.dataframe(df[colunas_principais].head(10), use_container_width=True)
+    else:
+        st.dataframe(df.head(10), use_container_width=True)
+    
+    # Informações sobre o dataset
+    st.markdown("---")
+    st.subheader("ℹ️ Informações sobre o Dataset")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.write("**Colunas Disponíveis:**")
+        st.write(f"Total: {len(df.columns)} colunas")
+        st.write("• Identificação: id, espécie, raça, idade, sexo")
+        st.write("• Exames: hemoglobina, hematócrito, leucócitos, etc.")
+        st.write("• Sinais vitais: temperatura, pulso, frequência respiratória")
+        st.write("• Sintomas: febre, vômito, diarreia, apatia, etc.")
+        st.write("• Diagnóstico: classificação da condição")
+    
+    with col2:
+        st.write("**Qualidade dos Dados:**")
+        valores_nulos = df.isnull().sum().sum()
+        st.write(f"• Registros sem dados faltantes: {len(df) - valores_nulos}/{len(df)}")
+        st.write(f"• Espécies: {', '.join(df['especie'].unique())}")
+        st.write(f"• Faixa de idade: {df['idade_anos'].min():.1f} - {df['idade_anos'].max():.1f} anos")
+        st.write(f"• Dados sintéticos para demonstração")
 
 elif pagina == "📊 Análise de Dados":
     st.header("📊 Análise Exploratória dos Dados")
@@ -299,47 +386,154 @@ elif pagina == "📈 Estatísticas":
     # Estatísticas gerais
     st.subheader("📊 Estatísticas Gerais")
     
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.metric("👶 Média de Idade", f"{df['idade_anos'].mean():.1f} anos")
+        st.metric("⚖️ Peso Médio", f"{df['peso_kg'].mean():.1f} kg")
+        st.metric("🌡️ Temperatura Média", f"{df['temperatura_retal'].mean():.1f}°C")
+    
+    with col2:
+        st.metric("🔥 Taxa de Febre", f"{(df['febre'].sum() / len(df) * 100):.1f}%")
+        st.metric("🤮 Taxa de Vômito", f"{(df['vomito'].sum() / len(df) * 100):.1f}%")
+        st.metric("💩 Taxa de Diarreia", f"{(df['diarreia'].sum() / len(df) * 100):.1f}%")
+    
+    with col3:
+        st.metric("😴 Taxa de Apatia", f"{(df['apatia'].sum() / len(df) * 100):.1f}%")
+        st.metric("📉 Taxa de Perda de Peso", f"{(df['perda_peso'].sum() / len(df) * 100):.1f}%")
+        st.metric("🫁 Taxa de Tosse", f"{(df['tosse'].sum() / len(df) * 100):.1f}%")
+    
+    st.markdown("---")
+    
+    # Análises por espécie
+    st.subheader("🐾 Análises por Espécie")
+    
     col1, col2 = st.columns(2)
     
     with col1:
-        st.metric("Média de Idade", f"{df['idade_anos'].mean():.1f} anos")
-        st.metric("Peso Médio", f"{df['peso_kg'].mean():.1f} kg")
-        st.metric("Temperatura Média", f"{df['temperatura_retal'].mean():.1f}°C")
-    
-    with col2:
-        st.metric("Taxa de Febre", f"{(df['febre'].sum() / len(df) * 100):.1f}%")
-        st.metric("Taxa de Vômito", f"{(df['vomito'].sum() / len(df) * 100):.1f}%")
-        st.metric("Taxa de Diarreia", f"{(df['diarreia'].sum() / len(df) * 100):.1f}%")
-    
-    # Distribuições
-    st.subheader("📊 Distribuições")
-    
-    col3, col4 = st.columns(2)
-    
-    with col3:
-        st.subheader("Por Espécie")
+        st.subheader("📊 Estatísticas por Espécie")
         especie_stats = df.groupby('especie').agg({
-            'idade_anos': 'mean',
-            'peso_kg': 'mean',
-            'febre': 'sum'
+            'idade_anos': ['mean', 'std'],
+            'peso_kg': ['mean', 'std'],
+            'temperatura_retal': ['mean', 'std'],
+            'febre': 'sum',
+            'vomito': 'sum',
+            'diarreia': 'sum'
         }).round(2)
+        
+        # Simplificar nomes das colunas
+        especie_stats.columns = ['Idade_Média', 'Idade_Desvio', 'Peso_Médio', 'Peso_Desvio',
+                               'Temp_Média', 'Temp_Desvio', 'Casos_Febre', 'Casos_Vômito', 'Casos_Diarreia']
         st.dataframe(especie_stats)
     
-    with col4:
-        st.subheader("Por Diagnóstico")
-        diag_stats = df.groupby('diagnostico').size().sort_values(ascending=False)
-        st.bar_chart(diag_stats)
+    with col2:
+        st.subheader("📈 Distribuição de Idades por Espécie")
+        # Criar histograma de idades por espécie
+        for especie in df['especie'].unique():
+            especie_data = df[df['especie'] == especie]['idade_anos']
+            st.write(f"**{especie}** - Idades:")
+            st.bar_chart(especie_data.value_counts().sort_index())
+    
+    st.markdown("---")
+    
+    # Análises por diagnóstico
+    st.subheader("🏥 Análises por Diagnóstico")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader("📊 Estatísticas por Diagnóstico")
+        diag_stats = df.groupby('diagnostico').agg({
+            'idade_anos': ['mean', 'count'],
+            'peso_kg': 'mean',
+            'temperatura_retal': 'mean',
+            'febre': 'mean',
+            'vomito': 'mean'
+        }).round(2)
+        
+        diag_stats.columns = ['Idade_Média', 'N_Casos', 'Peso_Médio', 'Temp_Média', 'Taxa_Febre', 'Taxa_Vômito']
+        st.dataframe(diag_stats.sort_values('N_Casos', ascending=False))
+    
+    with col2:
+        st.subheader("📈 Distribuição de Diagnósticos")
+        diag_counts = df.groupby('diagnostico').size().sort_values(ascending=False)
+        st.bar_chart(diag_counts)
+        
+        # Mostrar percentuais
+        st.write("**Percentuais:**")
+        total = len(df)
+        for diag, count in diag_counts.items():
+            percentage = (count / total) * 100
+            st.write(f"• {diag}: {percentage:.1f}%")
+    
+    st.markdown("---")
+    
+    # Exames laboratoriais
+    st.subheader("🔬 Análise de Exames Laboratoriais")
+    
+    exames_cols = ['hemoglobina', 'hematocrito', 'leucocitos', 'glicose', 'ureia', 'creatinina']
+    exames_disponiveis = [col for col in exames_cols if col in df.columns]
+    
+    if exames_disponiveis:
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.subheader("📊 Estatísticas dos Exames")
+            exames_stats = df[exames_disponiveis].describe().round(2)
+            st.dataframe(exames_stats)
+        
+        with col2:
+            st.subheader("📈 Exame Selecionado por Diagnóstico")
+            exame_selecionado = st.selectbox("Selecione um exame:", exames_disponiveis)
+            
+            exame_por_diag = df.groupby('diagnostico')[exame_selecionado].mean().sort_values(ascending=False)
+            st.bar_chart(exame_por_diag)
+            
+            st.write(f"**Média geral de {exame_selecionado}:** {df[exame_selecionado].mean():.2f}")
+    
+    st.markdown("---")
+    
+    # Correlações
+    st.subheader("🔗 Matriz de Correlações")
+    
+    colunas_numericas = df.select_dtypes(include=[np.number]).columns.tolist()
+    if len(colunas_numericas) > 1:
+        correlacao = df[colunas_numericas].corr()
+        
+        # Mostrar apenas correlações relevantes
+        st.write("**Correlações mais significativas:**")
+        for i in range(len(correlacao.columns)):
+            for j in range(i+1, len(correlacao.columns)):
+                corr_val = correlacao.iloc[i, j]
+                if abs(corr_val) > 0.3:  # Apenas correlações moderadas/fortes
+                    st.write(f"• {correlacao.columns[i]} ↔ {correlacao.columns[j]}: {corr_val:.3f}")
+    
+    st.markdown("---")
     
     # Download dos dados
-    st.subheader("📥 Download")
+    st.subheader("📥 Download de Dados")
     
-    csv = df.to_csv(index=False).encode('utf-8')
-    st.download_button(
-        label="📊 Baixar Dataset Completo (CSV)",
-        data=csv,
-        file_name='veterinary_data.csv',
-        mime='text/csv',
-    )
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        csv = df.to_csv(index=False).encode('utf-8')
+        st.download_button(
+            label="📊 Baixar Dataset Completo (CSV)",
+            data=csv,
+            file_name='veterinary_data_complete.csv',
+            mime='text/csv',
+        )
+    
+    with col2:
+        # Estatísticas resumidas
+        resumo_stats = df.describe().round(2)
+        csv_resumo = resumo_stats.to_csv().encode('utf-8')
+        st.download_button(
+            label="📈 Baixar Estatísticas Resumidas (CSV)",
+            data=csv_resumo,
+            file_name='veterinary_statistics.csv',
+            mime='text/csv',
+        )
 
 # Footer
 st.markdown("---")
