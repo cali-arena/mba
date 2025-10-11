@@ -677,6 +677,7 @@ elif pagina == "🤖 Treinar Modelo":
             
             # Treinar múltiplos modelos
             st.subheader("🤖 Treinamento de Modelos")
+            st.info("🔄 Iniciando treinamento de 10 modelos de ML...")
             
             from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, ExtraTreesClassifier, AdaBoostClassifier, BaggingClassifier
             from sklearn.linear_model import LogisticRegression
@@ -686,6 +687,8 @@ elif pagina == "🤖 Treinar Modelo":
             from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, f1_score, precision_score, recall_score
             import plotly.express as px
             import plotly.graph_objects as go
+            
+            st.success("✅ Bibliotecas importadas com sucesso!")
             
             # Múltiplos modelos com hiperparâmetros otimizados
             models = {
@@ -749,6 +752,8 @@ elif pagina == "🤖 Treinar Modelo":
                 )
             }
             
+            st.success(f"✅ {len(models)} modelos configurados: {list(models.keys())}")
+            
             results = {}
             
             # Progress bar para treinamento
@@ -805,6 +810,8 @@ elif pagina == "🤖 Treinar Modelo":
             status_text.text("✅ Treinamento concluído!")
             progress_bar.empty()
             status_text.empty()
+            
+            st.success(f"🎉 Treinamento finalizado! {len([r for r in results.values() if r['model'] is not None])} modelos treinados com sucesso!")
             
             # Mostrar resultados
             st.subheader("📊 Comparação Completa de Modelos")
