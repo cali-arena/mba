@@ -596,14 +596,22 @@ elif pagina == "🤖 Treinar Modelo":
             
             # 2. Criar features derivadas avançadas
             if 'idade_anos' in df_ml.columns:
-                df_ml['idade_categoria'] = pd.cut(df_ml['idade_anos'], bins=[0, 1, 3, 7, 12, 100], labels=['Filhote', 'Jovem', 'Adulto', 'Maduro', 'Idoso'])
-                df_ml['idade_categoria_encoded'] = LabelEncoder().fit_transform(df_ml['idade_categoria'])
+                try:
+                    df_ml['idade_categoria'] = pd.cut(df_ml['idade_anos'], bins=[0, 1, 3, 7, 12, 100], labels=['Filhote', 'Jovem', 'Adulto', 'Maduro', 'Idoso'])
+                    df_ml['idade_categoria_encoded'] = LabelEncoder().fit_transform(df_ml['idade_categoria'])
+                except Exception as e:
+                    st.warning(f"⚠️ Erro ao criar categoria de idade: {e}")
+                    # Usar categorização simples como fallback
+                    df_ml['idade_categoria_encoded'] = (df_ml['idade_anos'] // 5).astype(int)
                 
                 # Features de idade
-                df_ml['idade_quadrado'] = df_ml['idade_anos'] ** 2
-                df_ml['idade_log'] = np.log1p(df_ml['idade_anos'])
-                df_ml['idade_senior'] = (df_ml['idade_anos'] > 7).astype(int)
-                df_ml['idade_filhote'] = (df_ml['idade_anos'] < 1).astype(int)
+                try:
+                    df_ml['idade_quadrado'] = df_ml['idade_anos'] ** 2
+                    df_ml['idade_log'] = np.log1p(df_ml['idade_anos'])
+                    df_ml['idade_senior'] = (df_ml['idade_anos'] > 7).astype(int)
+                    df_ml['idade_filhote'] = (df_ml['idade_anos'] < 1).astype(int)
+                except Exception as e:
+                    st.warning(f"⚠️ Erro ao criar features de idade: {e}")
             
             # 3. Features de exames laboratoriais combinados avançados
             exames_cols = ['hemoglobina', 'hematocrito', 'leucocitos', 'glicose', 'ureia', 'creatinina', 'alt', 'ast', 'fosfatase_alcalina', 'proteinas_totais', 'albumina']
@@ -632,9 +640,15 @@ elif pagina == "🤖 Treinar Modelo":
             sintomas_disponiveis = [col for col in sintomas_cols if col in df_ml.columns]
             
             if len(sintomas_disponiveis) >= 2:
-                df_ml['total_sintomas'] = df_ml[sintomas_disponiveis].sum(axis=1)
-                df_ml['severidade_sintomas'] = pd.cut(df_ml['total_sintomas'], bins=[-1, 0, 1, 3, 5, 10], labels=['Assintomático', 'Leve', 'Moderado', 'Severo', 'Crítico'])
-                df_ml['severidade_sintomas_encoded'] = LabelEncoder().fit_transform(df_ml['severidade_sintomas'])
+                try:
+                    df_ml['total_sintomas'] = df_ml[sintomas_disponiveis].sum(axis=1)
+                    df_ml['severidade_sintomas'] = pd.cut(df_ml['total_sintomas'], bins=[-1, 0, 1, 3, 5, 10], labels=['Assintomático', 'Leve', 'Moderado', 'Severo', 'Crítico'])
+                    df_ml['severidade_sintomas_encoded'] = LabelEncoder().fit_transform(df_ml['severidade_sintomas'])
+                except Exception as e:
+                    st.warning(f"⚠️ Erro ao criar features de sintomas: {e}")
+                    # Fallback simples
+                    df_ml['total_sintomas'] = df_ml[sintomas_disponiveis].sum(axis=1)
+                    df_ml['severidade_sintomas_encoded'] = (df_ml['total_sintomas'] > 2).astype(int)
                 
                 # Síndromes específicas
                 if all(col in df_ml.columns for col in ['febre', 'tosse']):
@@ -652,15 +666,25 @@ elif pagina == "🤖 Treinar Modelo":
             # Selecionar features para ML
             feature_cols = []
             
-            # Adicionar colunas numéricas originais
-            numeric_cols = df_ml.select_dtypes(include=[np.number]).columns.tolist()
-            feature_cols.extend([col for col in numeric_cols if col not in ['diagnostico_encoded']])
-            
-            # Remover colunas com muitos valores únicos (como ID)
-            feature_cols = [col for col in feature_cols if df_ml[col].nunique() < len(df_ml) * 0.8]
-            
-            X = df_ml[feature_cols].fillna(df_ml[feature_cols].mean())
-            y = df_ml['diagnostico_encoded']
+            try:
+                # Adicionar colunas numéricas originais
+                numeric_cols = df_ml.select_dtypes(include=[np.number]).columns.tolist()
+                feature_cols.extend([col for col in numeric_cols if col not in ['diagnostico_encoded']])
+                
+                # Remover colunas com muitos valores únicos (como ID)
+                feature_cols = [col for col in feature_cols if df_ml[col].nunique() < len(df_ml) * 0.8]
+                
+                # Verificar se temos features suficientes
+                if len(feature_cols) < 3:
+                    st.warning("⚠️ Poucas features disponíveis. Usando todas as colunas numéricas.")
+                    feature_cols = [col for col in numeric_cols if col not in ['diagnostico_encoded']]
+                
+                X = df_ml[feature_cols].fillna(df_ml[feature_cols].mean())
+                y = df_ml['diagnostico_encoded']
+                
+            except Exception as e:
+                st.error(f"❌ Erro na preparação dos dados: {e}")
+                st.stop()
             
             st.success(f"✅ Dados preparados: {X.shape[0]} amostras, {X.shape[1]} features")
             
