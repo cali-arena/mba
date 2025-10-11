@@ -799,8 +799,8 @@ elif pagina == "🤖 Treinar Modelo":
                     precision = precision_score(y_test, y_pred, average='macro')
                     recall = recall_score(y_test, y_pred, average='macro')
                     
-                            # Validação cruzada
-                            cv_scores = cross_val_score(model, X_train_scaled, y_train, cv=5, scoring='accuracy')
+                    # Validação cruzada
+                    cv_scores = cross_val_score(model, X_train_scaled, y_train, cv=5, scoring='accuracy')
                     cv_mean = cv_scores.mean()
                     cv_std = cv_scores.std()
                     
