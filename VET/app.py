@@ -480,24 +480,6 @@ le_diagnostico = model_data['le_diagnostico']
 accuracy = model_data.get('accuracy', 0)
 training_date = model_data.get('timestamp', 'N/A')
 
-# Mostrar informações do modelo
-col1, col2, col3 = st.columns(3)
-with col1:
-    st.markdown('<div class="metric-box">', unsafe_allow_html=True)
-    st.metric("🎯 Acurácia do Modelo", f"{accuracy:.1%}")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-with col2:
-    st.markdown('<div class="metric-box">', unsafe_allow_html=True)
-    st.metric("📊 Última Atualização", training_date.split('T')[0] if 'T' in training_date else training_date)
-    st.markdown('</div>', unsafe_allow_html=True)
-
-with col3:
-    st.markdown('<div class="metric-box">', unsafe_allow_html=True)
-    st.metric("🧠 Tipo de Modelo", "Gradient Boosting")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-st.divider()
 
 # Formulário de predição
 st.subheader("🔍 Predição de Diagnóstico")
