@@ -232,29 +232,39 @@ def sugerir_doencas(diagnostico):
 def sugerir_medicamentos(diagnostico):
     """Sugere medicamentos baseados no diagnóstico"""
     medicamentos = {
+        "Doença renal": [
+            {"nome": "Fluidos IV", "dose": "10-20 ml/kg/h", "frequencia": "Contínuo", "duracao": "24-48h", "prioridade": "Alta"},
+            {"nome": "Furosemida", "dose": "1-2 mg/kg", "frequencia": "2-3x/dia", "duracao": "Conforme resposta", "prioridade": "Alta"},
+            {"nome": "Enalapril", "dose": "0.25-0.5 mg/kg", "frequencia": "1-2x/dia", "duracao": "Crônico", "prioridade": "Média"},
+            {"nome": "Protetor renal", "dose": "20 mg/kg", "frequencia": "2x/dia", "duracao": "30 dias", "prioridade": "Média"}
+        ],
         "Infecção": [
-            {"nome": "Amoxicilina", "dose": "10-20 mg/kg", "frequencia": "2x/dia", "duracao": "7-10 dias"},
-            {"nome": "Ceftriaxona", "dose": "25 mg/kg", "frequencia": "1x/dia", "duracao": "5-7 dias"},
-            {"nome": "Metronidazol", "dose": "10-15 mg/kg", "frequencia": "2x/dia", "duracao": "5-7 dias"}
+            {"nome": "Amoxicilina + Clavulanato", "dose": "12.5-25 mg/kg", "frequencia": "2x/dia", "duracao": "7-10 dias", "prioridade": "Alta"},
+            {"nome": "Ceftriaxona", "dose": "25 mg/kg", "frequencia": "1x/dia", "duracao": "5-7 dias", "prioridade": "Alta"},
+            {"nome": "Metronidazol", "dose": "10-15 mg/kg", "frequencia": "2x/dia", "duracao": "5-7 dias", "prioridade": "Média"},
+            {"nome": "Anti-inflamatório", "dose": "0.2 mg/kg", "frequencia": "1x/dia", "duracao": "3-5 dias", "prioridade": "Baixa"}
         ],
         "Intoxicação": [
-            {"nome": "Carvão ativado", "dose": "1-3 g/kg", "frequencia": "Imediato", "duracao": "1 dose"},
-            {"nome": "Fluidos IV", "dose": "10-20 ml/kg/h", "frequencia": "Contínuo", "duracao": "24-48h"},
-            {"nome": "Protetor hepático", "dose": "20-50 mg/kg", "frequencia": "2x/dia", "duracao": "7-14 dias"}
+            {"nome": "Carvão ativado", "dose": "1-3 g/kg", "frequencia": "Imediato", "duracao": "1 dose", "prioridade": "Crítica"},
+            {"nome": "Fluidos IV", "dose": "10-20 ml/kg/h", "frequencia": "Contínuo", "duracao": "24-48h", "prioridade": "Crítica"},
+            {"nome": "Protetor hepático", "dose": "20-50 mg/kg", "frequencia": "2x/dia", "duracao": "7-14 dias", "prioridade": "Alta"},
+            {"nome": "Antiemético", "dose": "0.1 mg/kg", "frequencia": "2x/dia", "duracao": "3-5 dias", "prioridade": "Média"}
         ],
         "Trauma": [
-            {"nome": "Morfina", "dose": "0.1-0.3 mg/kg", "frequencia": "4-6x/dia", "duracao": "3-5 dias"},
-            {"nome": "Anti-inflamatório", "dose": "0.2 mg/kg", "frequencia": "1x/dia", "duracao": "3-5 dias"},
-            {"nome": "Antibiótico profilático", "dose": "10 mg/kg", "frequencia": "2x/dia", "duracao": "5-7 dias"}
+            {"nome": "Morfina", "dose": "0.1-0.3 mg/kg", "frequencia": "4-6x/dia", "duracao": "3-5 dias", "prioridade": "Crítica"},
+            {"nome": "Anti-inflamatório", "dose": "0.2 mg/kg", "frequencia": "1x/dia", "duracao": "3-5 dias", "prioridade": "Alta"},
+            {"nome": "Antibiótico profilático", "dose": "10 mg/kg", "frequencia": "2x/dia", "duracao": "5-7 dias", "prioridade": "Média"},
+            {"nome": "Fluidos de ressuscitação", "dose": "20-40 ml/kg", "frequencia": "Bolus", "duracao": "Imediato", "prioridade": "Crítica"}
         ],
         "Tumor": [
-            {"nome": "Quimioterapia", "dose": "Conforme protocolo", "frequencia": "Semanal", "duracao": "4-6 ciclos"},
-            {"nome": "Corticosteroides", "dose": "0.5-1 mg/kg", "frequencia": "2x/dia", "duracao": "Conforme resposta"},
-            {"nome": "Analgésicos", "dose": "0.1-0.3 mg/kg", "frequencia": "2-3x/dia", "duracao": "Conforme necessário"}
+            {"nome": "Quimioterapia", "dose": "Conforme protocolo", "frequencia": "Semanal", "duracao": "4-6 ciclos", "prioridade": "Alta"},
+            {"nome": "Corticosteroides", "dose": "0.5-1 mg/kg", "frequencia": "2x/dia", "duracao": "Conforme resposta", "prioridade": "Média"},
+            {"nome": "Analgésicos", "dose": "0.1-0.3 mg/kg", "frequencia": "2-3x/dia", "duracao": "Conforme necessário", "prioridade": "Alta"},
+            {"nome": "Anti-emético", "dose": "0.1 mg/kg", "frequencia": "1x/dia", "duracao": "Profilático", "prioridade": "Média"}
         ]
     }
     return medicamentos.get(diagnostico, [
-        {"nome": "Tratamento sintomático", "dose": "Conforme sintomas", "frequencia": "Conforme necessário", "duracao": "Até melhora"}
+        {"nome": "Tratamento sintomático", "dose": "Conforme sintomas", "frequencia": "Conforme necessário", "duracao": "Até melhora", "prioridade": "Média"}
     ])
 
 def sugerir_exames(diagnostico):
@@ -292,9 +302,31 @@ def sugerir_exames(diagnostico):
 def sugerir_cirurgias(diagnostico):
     """Sugere cirurgias e protocolos baseados no diagnóstico"""
     cirurgias = {
+        "Doença renal": {
+            "procedimentos": [
+                {"nome": "Nefrectomia", "tempo": "2-4 horas", "urgencia": "Eletiva", "complicacoes": "Baixas"},
+                {"nome": "Ureterostomia", "tempo": "1-2 horas", "urgencia": "Urgente", "complicacoes": "Médias"},
+                {"nome": "Cistotomia", "tempo": "1-3 horas", "urgencia": "Urgente", "complicacoes": "Baixas"},
+                {"nome": "Biópsia renal", "tempo": "30-60 min", "urgencia": "Eletiva", "complicacoes": "Baixas"}
+            ],
+            "protocolo": "Protocolo renal: Fluidoterapia cuidadosa → Monitoramento eletrólitos → Cirurgia se necessário",
+            "tempo_total": "2-4 horas",
+            "anestesia": {
+                "premedicacao": "Midazolam 0.05 mg/kg + Morfina 0.05-0.1 mg/kg",
+                "inducao": "Propofol 2-4 mg/kg IV",
+                "manutencao": "Isoflurano 0.8-1.5% + Oxigênio",
+                "analgesia_pos": "Morfina 0.05-0.1 mg/kg 3-4x/dia + Monitoramento renal"
+            }
+        },
         "Tumor": {
-            "procedimentos": ["Tumor excision", "Mastectomia", "Amputação", "Biópsia cirúrgica"],
+            "procedimentos": [
+                {"nome": "Tumor excision", "tempo": "1-3 horas", "urgencia": "Eletiva", "complicacoes": "Médias"},
+                {"nome": "Mastectomia", "tempo": "2-4 horas", "urgencia": "Eletiva", "complicacoes": "Médias"},
+                {"nome": "Amputação", "tempo": "1-2 horas", "urgencia": "Eletiva", "complicacoes": "Baixas"},
+                {"nome": "Biópsia cirúrgica", "tempo": "30-90 min", "urgencia": "Eletiva", "complicacoes": "Baixas"}
+            ],
             "protocolo": "Protocolo oncológico: Pré-op: hemograma, função renal/hepática. Pós-op: quimioterapia adjuvante se indicado",
+            "tempo_total": "1-4 horas",
             "anestesia": {
                 "premedicacao": "Midazolam 0.1-0.2 mg/kg + Morfina 0.1-0.3 mg/kg",
                 "inducao": "Propofol 4-6 mg/kg IV",
@@ -303,8 +335,14 @@ def sugerir_cirurgias(diagnostico):
             }
         },
         "Trauma": {
-            "procedimentos": ["Reparação de fraturas", "Laparotomia exploratória", "Toracotomia", "Sutura de lacerações"],
+            "procedimentos": [
+                {"nome": "Reparação de fraturas", "tempo": "2-6 horas", "urgencia": "Emergência", "complicacoes": "Altas"},
+                {"nome": "Laparotomia exploratória", "tempo": "1-4 horas", "urgencia": "Emergência", "complicacoes": "Altas"},
+                {"nome": "Toracotomia", "tempo": "2-5 horas", "urgencia": "Emergência", "complicacoes": "Altas"},
+                {"nome": "Sutura de lacerações", "tempo": "30 min - 2h", "urgencia": "Urgente", "complicacoes": "Baixas"}
+            ],
             "protocolo": "Protocolo de trauma: Estabilização → Cirurgia → Monitoramento intensivo",
+            "tempo_total": "30 min - 6 horas",
             "anestesia": {
                 "premedicacao": "Midazolam 0.05-0.1 mg/kg + Fentanil 2-5 mcg/kg",
                 "inducao": "Etomidato 0.5-1 mg/kg IV (hemodinamicamente estável)",
@@ -313,29 +351,26 @@ def sugerir_cirurgias(diagnostico):
             }
         },
         "Obstrução": {
-            "procedimentos": ["Enterotomia", "Gastrotomia", "Uretrostomia", "Cistotomia"],
+            "procedimentos": [
+                {"nome": "Enterotomia", "tempo": "1-3 horas", "urgencia": "Emergência", "complicacoes": "Médias"},
+                {"nome": "Gastrotomia", "tempo": "1-2 horas", "urgencia": "Emergência", "complicacoes": "Médias"},
+                {"nome": "Uretrostomia", "tempo": "1-2 horas", "urgencia": "Urgente", "complicacoes": "Médias"},
+                {"nome": "Cistotomia", "tempo": "30 min - 1h", "urgencia": "Urgente", "complicacoes": "Baixas"}
+            ],
             "protocolo": "Protocolo de obstrução: Descompressão → Cirurgia → Fluidoterapia agressiva",
+            "tempo_total": "30 min - 3 horas",
             "anestesia": {
                 "premedicacao": "Midazolam 0.1 mg/kg + Buprenorfina 0.01-0.02 mg/kg",
                 "inducao": "Propofol 3-5 mg/kg IV",
                 "manutencao": "Isoflurano 1-2% + Oxigênio",
                 "analgesia_pos": "Buprenorfina 0.01-0.02 mg/kg 3x/dia por 5-7 dias"
             }
-        },
-        "Doença renal": {
-            "procedimentos": ["Nefrectomia", "Ureterostomia", "Cistotomia", "Biópsia renal"],
-            "protocolo": "Protocolo renal: Fluidoterapia cuidadosa → Monitoramento eletrólitos → Cirurgia se necessário",
-            "anestesia": {
-                "premedicacao": "Midazolam 0.05 mg/kg + Morfina 0.05-0.1 mg/kg",
-                "inducao": "Propofol 2-4 mg/kg IV",
-                "manutencao": "Isoflurano 0.8-1.5% + Oxigênio",
-                "analgesia_pos": "Morfina 0.05-0.1 mg/kg 3-4x/dia + Monitoramento renal"
-            }
         }
     }
     return cirurgias.get(diagnostico, {
-        "procedimentos": ["Avaliação cirúrgica necessária"],
+        "procedimentos": [{"nome": "Avaliação cirúrgica necessária", "tempo": "A determinar", "urgencia": "Eletiva", "complicacoes": "A avaliar"}],
         "protocolo": "Protocolo padrão: Avaliação pré-anestésica → Cirurgia → Monitoramento pós-operatório",
+        "tempo_total": "A determinar",
         "anestesia": {
             "premedicacao": "Midazolam 0.1 mg/kg + Analgésico",
             "inducao": "Propofol 4-6 mg/kg IV",
@@ -401,6 +436,23 @@ def carregar_modelo():
         st.error(f"❌ Erro ao carregar modelo: {e}")
         st.code(traceback.format_exc())
         return None
+
+def predizer_multiplas_doencas(probabilidades, le_diagnostico, threshold=0.15):
+    """Prediz múltiplas doenças baseadas nas probabilidades"""
+    diagnosticos_possiveis = []
+    classes = le_diagnostico.classes_
+    
+    for i, prob in enumerate(probabilidades[0]):
+        if prob > threshold:
+            diagnosticos_possiveis.append({
+                'diagnostico': classes[i],
+                'probabilidade': prob * 100,
+                'confianca': 'Alta' if prob > 0.5 else 'Média' if prob > 0.3 else 'Baixa'
+            })
+    
+    # Ordenar por probabilidade
+    diagnosticos_possiveis.sort(key=lambda x: x['probabilidade'], reverse=True)
+    return diagnosticos_possiveis
 
 # Carregar modelo
 with st.spinner("🔄 Carregando modelo..."):
@@ -642,10 +694,12 @@ if st.button("🔍 Realizar Predição", type="primary", use_container_width=Tru
         st.subheader("💊 Protocolo de Medicação")
         medicamentos = sugerir_medicamentos(diagnostico_predito)
         for med in medicamentos:
-            with st.expander(f"💊 {med['nome']}"):
+            prioridade_color = "🔴" if med['prioridade'] == "Crítica" else "🟠" if med['prioridade'] == "Alta" else "🟡" if med['prioridade'] == "Média" else "🟢"
+            with st.expander(f"{prioridade_color} {med['nome']} ({med['prioridade']})"):
                 st.markdown(f"**Dose:** {med['dose']}")
                 st.markdown(f"**Frequência:** {med['frequencia']}")
                 st.markdown(f"**Duração:** {med['duracao']}")
+                st.markdown(f"**Prioridade:** {med['prioridade']}")
         
         # Terceira linha: Cirurgia e Anestesia
         col3, col4 = st.columns(2)
@@ -653,9 +707,15 @@ if st.button("🔍 Realizar Predição", type="primary", use_container_width=Tru
         with col3:
             st.subheader("🔪 Protocolo Cirúrgico")
             cirurgias = sugerir_cirurgias(diagnostico_predito)
-            st.markdown(f"**Procedimentos:**")
+            st.markdown(f"**Tempo total estimado:** {cirurgias['tempo_total']}")
+            st.markdown(f"**Procedimentos possíveis:**")
             for procedimento in cirurgias['procedimentos']:
-                st.markdown(f"• {procedimento}")
+                urgencia_color = "🔴" if procedimento['urgencia'] == "Emergência" else "🟠" if procedimento['urgencia'] == "Urgente" else "🟢"
+                st.markdown(f"• **{procedimento['nome']}**")
+                st.markdown(f"  ⏱️ Tempo: {procedimento['tempo']}")
+                st.markdown(f"  {urgencia_color} Urgência: {procedimento['urgencia']}")
+                st.markdown(f"  ⚠️ Complicações: {procedimento['complicacoes']}")
+                st.markdown("")
             
             st.markdown(f"**Protocolo:** {cirurgias['protocolo']}")
         
@@ -682,6 +742,37 @@ if st.button("🔍 Realizar Predição", type="primary", use_container_width=Tru
                 
                 recomendacoes = obter_recomendacoes_personalizadas(diagnostico_predito, sintomas_lista, dados_lab)
                 st.markdown(recomendacoes)
+        
+        # Múltiplas doenças preditas
+        st.subheader("🔍 Diagnósticos Alternativos")
+        diagnosticos_multiplos = predizer_multiplas_doencas(probabilidades, le_diagnostico)
+        
+        if len(diagnosticos_multiplos) > 1:
+            st.info(f"🎯 **{len(diagnosticos_multiplos)} diagnósticos possíveis identificados:**")
+            
+            for i, diag in enumerate(diagnosticos_multiplos[:3]):  # Top 3
+                confianca_color = "🟢" if diag['confianca'] == "Alta" else "🟡" if diag['confianca'] == "Média" else "🟠"
+                st.markdown(f"**{i+1}.** {confianca_color} **{diag['diagnostico']}** - {diag['probabilidade']:.1f}% ({diag['confianca']})")
+                
+                # Mostrar sugestões para cada diagnóstico alternativo
+                with st.expander(f"📋 Recomendações para {diag['diagnostico']}"):
+                    col_alt1, col_alt2 = st.columns(2)
+                    
+                    with col_alt1:
+                        st.markdown("**💊 Medicamentos:**")
+                        meds_alt = sugerir_medicamentos(diag['diagnostico'])
+                        for med in meds_alt[:2]:  # Top 2 medicamentos
+                            prioridade_color = "🔴" if med['prioridade'] == "Crítica" else "🟠" if med['prioridade'] == "Alta" else "🟡"
+                            st.markdown(f"• {prioridade_color} {med['nome']} - {med['dose']}")
+                    
+                    with col_alt2:
+                        st.markdown("**🔪 Cirurgias:**")
+                        cirurgias_alt = sugerir_cirurgias(diag['diagnostico'])
+                        for proc in cirurgias_alt['procedimentos'][:2]:  # Top 2 procedimentos
+                            urgencia_color = "🔴" if proc['urgencia'] == "Emergência" else "🟠" if proc['urgencia'] == "Urgente" else "🟢"
+                            st.markdown(f"• {urgencia_color} {proc['nome']} - {proc['tempo']}")
+        else:
+            st.info("🎯 **Diagnóstico único identificado** - Confiança alta no resultado principal")
         
         st.divider()
         
