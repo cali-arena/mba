@@ -21,7 +21,7 @@ st.set_page_config(
     page_title="VetDiagnosisAI - Sistema Inteligente",
     page_icon="🐾",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
 # CSS personalizado para interface limpa e moderna
@@ -115,6 +115,15 @@ st.markdown("""
         padding: 1rem;
         background: #fafafa;
     }
+    /* Esconder sidebar completamente */
+    section[data-testid="stSidebar"] {display: none !important;}
+    .stApp > div:first-child {padding-left: 1rem !important;}
+    div[data-testid="stSidebar"] {display: none !important;}
+    .css-1d391kg {display: none !important;}
+    .css-1v0mbdj {display: none !important;}
+    .css-1cypcdb {display: none !important;}
+    .css-1v3fvcr {display: none !important;}
+    .stApp > div:first-child > div:first-child {display: none !important;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -181,7 +190,7 @@ def call_deepseek_api(message, context=""):
         return f"❌ Erro ao conectar com IA: {str(e)}"
 
 # Sistema de abas
-tab_names = ["🔍 Predição", "💬 Chat IA", "📊 Análise", "⚙️ Configurações"]
+tab_names = ["🔍 Predição", "💬 Chat IA"]
 tabs = st.tabs(tab_names)
 
 # ABA 1: PREDIÇÃO
@@ -556,64 +565,6 @@ with tabs[1]:
             st.session_state.chat_tabs.append(new_tab_name)
             st.rerun()
 
-# ABA 3: ANÁLISE
-with tabs[2]:
-    st.subheader("📊 Análise e Insights")
-    st.info("📈 Visualize análises detalhadas dos casos e tendências diagnósticas.")
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.metric("📊 Total de Consultas", "1,247")
-        st.metric("🎯 Taxa de Acerto", "87.3%")
-        st.metric("⏱️ Tempo Médio", "4.2 min")
-    
-    with col2:
-        st.metric("🏥 Casos Críticos", "23")
-        st.metric("💊 Tratamentos Sugeridos", "156")
-        st.metric("🔬 Exames Recomendados", "89")
-    
-    # Gráfico de exemplo
-    import plotly.express as px
-    
-    # Dados de exemplo
-    diagnosticos = ['Infecção', 'Intoxicação', 'Trauma', 'Tumor', 'Outros']
-    casos = [45, 32, 28, 15, 25]
-    
-    fig = px.pie(values=casos, names=diagnosticos, title="Distribuição de Diagnósticos")
-    st.plotly_chart(fig, use_container_width=True)
-
-# ABA 4: CONFIGURAÇÕES
-with tabs[3]:
-    st.subheader("⚙️ Configurações")
-    st.info("🔧 Configure suas preferências e integrações.")
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.markdown("**🔑 API Keys**")
-        deepseek_key = st.text_input("DeepSeek API Key:", type="password", 
-                                   value=os.getenv("DEEPSEEK_API_KEY", ""))
-        
-        if st.button("💾 Salvar Configurações"):
-            os.environ["DEEPSEEK_API_KEY"] = deepseek_key
-            st.success("✅ Configurações salvas!")
-        
-        st.markdown("**🎨 Tema**")
-        theme = st.selectbox("Escolha o tema:", ["Claro", "Escuro", "Automático"])
-        
-        st.markdown("**🌐 Idioma**")
-        language = st.selectbox("Idioma:", ["Português", "English", "Español"])
-    
-    with col2:
-        st.markdown("**📊 Preferências**")
-        auto_save = st.checkbox("Salvar automaticamente", value=True)
-        notifications = st.checkbox("Notificações", value=True)
-        dark_mode = st.checkbox("Modo escuro", value=False)
-        
-        st.markdown("**📈 Limites**")
-        max_chat_history = st.slider("Máximo de mensagens no chat:", 10, 100, 50)
-        response_timeout = st.slider("Timeout da API (segundos):", 10, 60, 30)
 
 # Footer
 st.divider()
