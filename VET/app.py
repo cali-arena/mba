@@ -128,8 +128,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Header principal
-st.markdown('<h1 class="main-header">🐾 VetDiagnosisAI - Sistema Inteligente</h1>', unsafe_allow_html=True)
-st.markdown('<p style="text-align: center; color: #666;">Sistema Inteligente de Apoio ao Diagnóstico Veterinário com IA Conversacional</p>', unsafe_allow_html=True)
+st.markdown('<h1 class="main-header">🐾 DIAGVET IA</h1>', unsafe_allow_html=True)
 
 # Inicializar session state para chat
 if "chat_history" not in st.session_state:
