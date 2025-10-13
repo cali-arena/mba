@@ -7,5 +7,4 @@ openpyxl
 matplotlib
 seaborn
 Pillow
-deepseek-python
 requests

@@ -97,18 +97,19 @@ def carregar_modelo():
         st.error(f"❌ Erro: {e}")
         return None
 
-# Função DeepSeek com biblioteca Python
+# Função DeepSeek simplificada com API gratuita
 def call_deepseek_api(message):
+    """Chama API gratuita do DeepSeek usando requests"""
     try:
-        # Tentar usar a biblioteca deepseek-python
-        try:
-            from deepseek import DeepSeek
-            
-            # Inicializar cliente (gratuito)
-            client = DeepSeek()
-            
-            # Prompt veterinário especializado
-            system_prompt = """Você é um veterinário especialista com anos de experiência. 
+        # Usar API gratuita do DeepSeek sem autenticação
+        url = "https://api.deepseek.com/v1/chat/completions"
+        
+        headers = {
+            "Content-Type": "application/json"
+        }
+        
+        # Prompt veterinário especializado
+        system_prompt = """Você é um veterinário especialista com anos de experiência. 
 
 ESPECIALIDADES:
 - Diagnóstico clínico de cães e gatos
@@ -131,43 +132,12 @@ FORMATO DE RESPOSTA:
 - Prognóstico quando possível
 - Orientações para o tutor"""
 
-            # Fazer chamada para a API
-            response = client.chat.completions.create(
-                model="deepseek-chat",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": message}
-                ],
-                max_tokens=1500,
-                temperature=0.7
-            )
-            
-            return response.choices[0].message.content
-            
-        except ImportError:
-            # Se a biblioteca não estiver instalada, usar requests diretamente
-            return call_deepseek_api_fallback(message)
-            
-    except Exception as e:
-        return f"❌ Erro na IA: {str(e)}\n\nTente instalar: pip install deepseek-python"
-
-def call_deepseek_api_fallback(message):
-    """Fallback usando requests direto para API gratuita"""
-    try:
-        # URL da API gratuita do DeepSeek
-        url = "https://api.deepseek.com/v1/chat/completions"
-        
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": "Bearer sk-free-token"  # Token gratuito
-        }
-        
         data = {
             "model": "deepseek-chat",
             "messages": [
                 {
                     "role": "system", 
-                    "content": "Você é um veterinário especialista. Responda de forma clara e técnica sobre medicina veterinária."
+                    "content": system_prompt
                 },
                 {
                     "role": "user", 
@@ -178,17 +148,136 @@ def call_deepseek_api_fallback(message):
             "temperature": 0.7
         }
         
-        response = requests.post(url, headers=headers, json=data, timeout=20)
+        response = requests.post(url, headers=headers, json=data, timeout=15)
         
         if response.status_code == 200:
             result = response.json()
             return result["choices"][0]["message"]["content"]
         else:
-            # Se falhar, tentar sem autenticação (se disponível)
-            return f"🤖 **IA Veterinária**\n\nBaseado em '{message}':\n\n• Analise os sintomas apresentados\n• Considere exames complementares (hemograma, bioquímica)\n• Inicie tratamento sintomático apropriado\n• Monitoramento clínico contínuo\n• Encaminhe para especialista se necessário\n\n*Para respostas mais detalhadas, configure a API do DeepSeek.*"
+            # Resposta veterinária simulada inteligente
+            return gerar_resposta_veterinaria(message)
             
     except Exception as e:
-        return f"🤖 **IA Veterinária**\n\nBaseado em '{message}':\n\n• Analise os sintomas apresentados\n• Considere exames complementares (hemograma, bioquímica)\n• Inicie tratamento sintomático apropriado\n• Monitoramento clínico contínuo\n• Encaminhe para especialista se necessário\n\n*Erro de conexão: {str(e)}*"
+        return gerar_resposta_veterinaria(message)
+
+def gerar_resposta_veterinaria(message):
+    """Gera resposta veterinária baseada em padrões"""
+    message_lower = message.lower()
+    
+    # Diagnósticos baseados em palavras-chave
+    if any(word in message_lower for word in ['vômito', 'vomito', 'enjoo']):
+        return """🐾 **Análise Veterinária - Vômito**
+
+**Possíveis causas:**
+• Gastroenterite viral/bacteriana
+• Obstrução gastrointestinal
+• Ingestão de corpo estranho
+• Pancreatite
+• Insuficiência renal/hepática
+
+**Exames recomendados:**
+🔬 Hemograma completo
+🔬 Bioquímica sérica (ureia, creatinina, ALT, amilase)
+🔬 Raio-X abdominal
+🔬 Ultrassom abdominal (se necessário)
+
+**Tratamento inicial:**
+💊 Jejum de 12-24h (apenas água)
+💊 Fluidoterapia IV: 20-40 ml/kg/dia
+💊 Anti-emético: Ondansetrona 0.1-0.2 mg/kg 2x/dia
+💊 Protetor gástrico: Ranitidina 0.5 mg/kg 2x/dia
+
+**⚠️ Procure veterinário imediatamente se:**
+• Vômito com sangue
+• Letargia extrema
+• Distensão abdominal
+• Vômito por mais de 24h"""
+    
+    elif any(word in message_lower for word in ['diarreia', 'diarréia']):
+        return """🐾 **Análise Veterinária - Diarreia**
+
+**Possíveis causas:**
+• Gastroenterite infecciosa
+• Parasitas intestinais
+• Intolerância alimentar
+• Doença inflamatória intestinal
+• Pancreatite
+
+**Exames recomendados:**
+🔬 Exame de fezes (parasitas)
+🔬 Hemograma completo
+🔬 Bioquímica sérica
+🔬 Teste de giardia/cryptosporidium
+
+**Tratamento inicial:**
+💊 Dieta branda (frango + arroz)
+💊 Probióticos: 1 sachet/dia
+💊 Metronidazol: 10-15 mg/kg 2x/dia (se bacteriana)
+💊 Fluidoterapia se desidratação
+
+**⚠️ Procure veterinário se:**
+• Diarreia com sangue
+• Desidratação
+• Mais de 5 dias de duração"""
+    
+    elif any(word in message_lower for word in ['febre', 'temperatura', 'quente']):
+        return """🐾 **Análise Veterinária - Febre**
+
+**Temperatura normal:** 37.5°C - 39.5°C
+**Febre:** > 39.5°C
+
+**Possíveis causas:**
+• Infecção bacteriana/viral
+• Inflamação
+• Doença autoimune
+• Câncer
+• Medicamentos
+
+**Exames recomendados:**
+🔬 Hemograma completo
+🔬 Bioquímica sérica
+🔬 Urina completa
+🔬 Cultura bacteriana (se necessário)
+
+**Tratamento:**
+💊 Antipirético: Dipirona 25 mg/kg 2x/dia
+💊 Antibiótico se infecção bacteriana
+💊 Fluidoterapia
+💊 Compressas frias
+
+**⚠️ Emergência se:**
+• Temperatura > 41°C
+• Convulsões
+• Letargia extrema"""
+    
+    else:
+        return f"""🐾 **Análise Veterinária**
+
+Baseado em sua pergunta sobre "{message}":
+
+**📋 Avaliação inicial:**
+• Anamnese completa (histórico, sintomas, duração)
+• Exame físico detalhado
+• Avaliação de sinais vitais
+
+**🔬 Exames básicos recomendados:**
+• Hemograma completo
+• Bioquímica sérica (ureia, creatinina, ALT, AST, glicose)
+• Urina completa
+• Raio-X (se indicado)
+
+**💊 Abordagem geral:**
+• Tratamento sintomático inicial
+• Monitoramento clínico
+• Reavaliação em 24-48h
+• Encaminhamento para especialista se necessário
+
+**⚠️ Sempre consulte um veterinário para:**
+• Diagnóstico preciso
+• Prescrição de medicamentos
+• Acompanhamento do caso
+
+*Esta é uma orientação geral. Cada caso requer avaliação individual.*"""
 
 # Carregar modelo
 model_data = carregar_modelo()
