@@ -403,8 +403,8 @@ def carregar_modelo():
         return None
 
 # Carregar modelo
-    with st.spinner("🔄 Carregando modelo..."):
-model_data = carregar_modelo()
+with st.spinner("🔄 Carregando modelo..."):
+    model_data = carregar_modelo()
 
 if model_data is None:
         st.error("❌ Não foi possível carregar o modelo!")
