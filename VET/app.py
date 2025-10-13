@@ -376,7 +376,7 @@ def carregar_modelo():
             for model_path in possible_paths:
                 if Path(model_path).exists():
                     found_path = model_path
-            model_data = joblib.load(model_path)
+                    model_data = joblib.load(model_path)
                     break
             
             if model_data is not None:
