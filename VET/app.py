@@ -110,12 +110,15 @@ def carregar_modelo():
     try:
         # Lista de caminhos possíveis para o modelo (Streamlit Cloud compatível)
         possible_paths = [
+            "VET/models/model_minimal.pkl",
+            "VET/models/gb_model_optimized.pkl", 
+            "VET/models/gb_optimized_model.pkl",
+            "./VET/models/model_minimal.pkl",
+            "./VET/models/gb_model_optimized.pkl",
+            "./VET/models/gb_optimized_model.pkl",
             "models/model_minimal.pkl",
             "models/gb_model_optimized.pkl",
-            "models/gb_optimized_model.pkl",
-            "./models/model_minimal.pkl",
-            "./models/gb_model_optimized.pkl",
-            "./models/gb_optimized_model.pkl"
+            "models/gb_optimized_model.pkl"
         ]
         
         model_data = None
