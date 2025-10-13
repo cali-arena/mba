@@ -419,7 +419,7 @@ if model_data is None:
             else:
                 st.write("❌ Pasta 'models' não encontrada")
         
-    st.stop()
+        st.stop()
 
 # Extrair componentes do modelo
 modelo = model_data['model']
