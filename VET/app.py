@@ -115,6 +115,40 @@ st.markdown("""
         padding: 1rem;
         background: #fafafa;
     }
+    .chat-message {
+        margin: 10px 0;
+        padding: 15px;
+        border-radius: 10px;
+        max-width: 80%;
+        word-wrap: break-word;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .user-message {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        margin-left: auto;
+        text-align: right;
+    }
+    .assistant-message {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+        margin-right: auto;
+    }
+    .quick-action-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 5px;
+        padding: 8px 12px;
+        margin: 2px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    .quick-action-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
     /* Esconder sidebar completamente */
     section[data-testid="stSidebar"] {display: none !important;}
     .stApp > div:first-child {padding-left: 1rem !important;}
@@ -137,10 +171,10 @@ if "chat_tabs" not in st.session_state:
     st.session_state.chat_tabs = ["Chat Principal"]
 
 # Função para chamar DeepSeek API
-def call_deepseek_api(message, context=""):
-    """Chama a API do DeepSeek para obter resposta inteligente"""
+def call_deepseek_api(message, chat_history=None, context=""):
+    """Chama a API do DeepSeek para obter resposta inteligente com histórico"""
     try:
-        # Configuração da API (você pode adicionar sua chave API aqui)
+        # Configuração da API
         api_key = os.getenv("DEEPSEEK_API_KEY", "sk-your-api-key-here")
         
         headers = {
@@ -148,31 +182,58 @@ def call_deepseek_api(message, context=""):
             "Content-Type": "application/json"
         }
         
-        # Contexto veterinário para melhorar as respostas
-        system_prompt = f"""Você é um assistente veterinário inteligente especializado em diagnóstico e tratamento animal. 
+        # Sistema de prompt veterinário avançado
+        system_prompt = f"""Você é um veterinário especialista com anos de experiência em medicina veterinária. 
+
+ESPECIALIDADES:
+- Diagnóstico clínico de cães e gatos
+- Medicina interna veterinária  
+- Cirurgia veterinária
+- Emergências veterinárias
+- Farmacologia veterinária
+
+DIRETRIZES:
+1. Seja preciso e técnico, mas acessível
+2. Sempre sugira exames complementares quando apropriado
+3. Mencione doses de medicamentos quando relevante
+4. Considere o histórico da conversa para dar respostas contextuais
+5. Se for uma emergência, deixe claro a urgência
+6. Use emojis veterinários (🐾, 🏥, 💊, 🔬) para tornar mais amigável
+
+FORMATO DE RESPOSTA:
+- Diagnóstico diferencial quando aplicável
+- Exames recomendados com justificativas
+- Tratamento sugerido com doses
+- Prognóstico quando possível
+- Orientações para o tutor
+
+Contexto atual: {context}"""
         
-        Contexto atual: {context}
+        # Construir mensagens com histórico
+        messages = [{"role": "system", "content": system_prompt}]
         
-        Responda de forma técnica mas acessível, sempre considerando:
-        - Sintomas apresentados
-        - Possíveis diagnósticos diferenciais
-        - Recomendações de exames complementares
-        - Tratamentos sugeridos
-        - Quando encaminhar para especialista
+        # Adicionar histórico se disponível
+        if chat_history:
+            for msg in chat_history[-8:]:  # Últimas 8 mensagens
+                messages.append({
+                    "role": "user" if msg["role"] == "user" else "assistant", 
+                    "content": msg["content"]
+                })
         
-        Seja preciso, empático e educativo."""
+        # Adicionar mensagem atual
+        messages.append({"role": "user", "content": message})
         
         data = {
             "model": "deepseek-chat",
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": message}
-            ],
-            "max_tokens": 1000,
-            "temperature": 0.7
+            "messages": messages,
+            "max_tokens": 2000,
+            "temperature": 0.7,
+            "top_p": 0.9,
+            "frequency_penalty": 0.1,
+            "presence_penalty": 0.1
         }
         
-        # Se não tiver API key, usar resposta simulada
+        # Se não tiver API key, usar resposta simulada inteligente
         if api_key == "sk-your-api-key-here":
             return f"🤖 **Assistente Veterinário IA**\n\nBaseado na sua pergunta sobre '{message}', aqui estão algumas considerações importantes:\n\n• **Sintomas observados:** Analise detalhadamente todos os sintomas apresentados\n• **Exames complementares:** Considere hemograma, bioquímica e exames específicos\n• **Diagnóstico diferencial:** Liste as principais hipóteses diagnósticas\n• **Tratamento:** Inicie tratamento sintomático enquanto aguarda confirmação\n\n*Para respostas mais precisas, configure sua chave API do DeepSeek nas configurações.*"
         
@@ -183,8 +244,12 @@ def call_deepseek_api(message, context=""):
             result = response.json()
             return result["choices"][0]["message"]["content"]
         else:
-            return f"❌ Erro na API: {response.status_code}"
+            return f"❌ Erro na API: {response.status_code}\nDetalhes: {response.text}"
             
+    except requests.exceptions.Timeout:
+        return "⏱️ Timeout na conexão. Tente novamente."
+    except requests.exceptions.ConnectionError:
+        return "🌐 Erro de conexão. Verifique sua internet."
     except Exception as e:
         return f"❌ Erro ao conectar com IA: {str(e)}"
 
@@ -827,12 +892,35 @@ with tabs[1]:
         st.markdown("• Solicite tratamentos")
         st.markdown("• Peça exames")
         
+        st.markdown("**⚡ Ações Rápidas:**")
+        
+        # Botões de perguntas rápidas
+        if st.button("🐕 Sintomas Comuns"):
+            quick_question = "Quais são os sintomas mais comuns em cães e como interpretá-los?"
+            st.session_state.quick_question = quick_question
+        
+        if st.button("🐱 Emergências"):
+            quick_question = "Quais são as emergências veterinárias mais comuns e como identificar?"
+            st.session_state.quick_question = quick_question
+            
+        if st.button("💊 Medicamentos"):
+            quick_question = "Quais são os medicamentos veterinários mais utilizados e suas indicações?"
+            st.session_state.quick_question = quick_question
+        
+        if st.button("🔬 Exames"):
+            quick_question = "Quais exames laboratoriais são mais importantes na medicina veterinária?"
+            st.session_state.quick_question = quick_question
+        
         if st.button("🗑️ Limpar Chat"):
             st.session_state.chat_history = []
             st.rerun()
     
-    # Input do usuário
-    user_input = st.text_area("Digite sua pergunta:", height=100, placeholder="Ex: Cão com vômito e diarreia há 2 dias, o que pode ser?")
+    # Input do usuário com suporte a perguntas rápidas
+    if "quick_question" in st.session_state:
+        user_input = st.text_area("Digite sua pergunta:", value=st.session_state.quick_question, height=100, placeholder="Ex: Cão com vômito e diarreia há 2 dias, o que pode ser?")
+        del st.session_state.quick_question
+    else:
+        user_input = st.text_area("Digite sua pergunta:", height=100, placeholder="Ex: Cão com vômito e diarreia há 2 dias, o que pode ser?")
     
     col1, col2, col3 = st.columns([1, 1, 2])
     with col1:
@@ -845,14 +933,14 @@ with tabs[1]:
                     "timestamp": datetime.now()
                 })
                 
-                # Gerar resposta da IA
+                # Gerar resposta da IA com histórico
                 with st.spinner("🤖 IA pensando..."):
                     context = f"Histórico: {len(st.session_state.chat_history)} mensagens"
-                    ai_response = call_deepseek_api(user_input, context)
+                    ai_response = call_deepseek_api(user_input, st.session_state.chat_history, context)
                 
                 # Adicionar resposta da IA
                 st.session_state.chat_history.append({
-                    "role": "assistant", 
+                    "role": "assistant",
                     "content": ai_response,
                     "timestamp": datetime.now()
                 })
