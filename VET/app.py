@@ -189,6 +189,59 @@ def call_deepseek_api(message, context=""):
     except Exception as e:
         return f"❌ Erro ao conectar com IA: {str(e)}"
 
+# Funções para sugestões baseadas no diagnóstico
+def sugerir_doencas(diagnostico):
+    """Sugere doenças relacionadas baseadas no diagnóstico"""
+    doencas_sugeridas = {
+        "Infecção": ["Sepse", "Pneumonia", "Cistite", "Dermatite", "Otite"],
+        "Intoxicação": ["Envenenamento", "Insuficiência hepática", "Nefrotoxicidade", "Gastroenterite tóxica"],
+        "Trauma": ["Fraturas", "Hemorragia interna", "Concussão", "Lacerações", "Hematomas"],
+        "Tumor": ["Carcinoma", "Sarcoma", "Linfoma", "Adenoma", "Melanoma"],
+        "Doença renal": ["Insuficiência renal", "Nefrite", "Cálculos renais", "Glomerulonefrite"],
+        "Doença cardíaca": ["Cardiomiopatia", "Arritmia", "Insuficiência cardíaca", "Endocardite"],
+        "Diabetes": ["Cetoacidose", "Hipoglicemia", "Retinopatia", "Nefropatia diabética"]
+    }
+    return doencas_sugeridas.get(diagnostico, ["Diagnóstico a confirmar com exames complementares"])
+
+def sugerir_medicamentos(diagnostico):
+    """Sugere medicamentos baseados no diagnóstico"""
+    medicamentos = {
+        "Infecção": [
+            {"nome": "Amoxicilina", "dose": "10-20 mg/kg", "frequencia": "2x/dia", "duracao": "7-10 dias"},
+            {"nome": "Ceftriaxona", "dose": "25 mg/kg", "frequencia": "1x/dia", "duracao": "5-7 dias"},
+            {"nome": "Metronidazol", "dose": "10-15 mg/kg", "frequencia": "2x/dia", "duracao": "5-7 dias"}
+        ],
+        "Intoxicação": [
+            {"nome": "Carvão ativado", "dose": "1-3 g/kg", "frequencia": "Imediato", "duracao": "1 dose"},
+            {"nome": "Fluidos IV", "dose": "10-20 ml/kg/h", "frequencia": "Contínuo", "duracao": "24-48h"},
+            {"nome": "Protetor hepático", "dose": "20-50 mg/kg", "frequencia": "2x/dia", "duracao": "7-14 dias"}
+        ],
+        "Trauma": [
+            {"nome": "Morfina", "dose": "0.1-0.3 mg/kg", "frequencia": "4-6x/dia", "duracao": "3-5 dias"},
+            {"nome": "Anti-inflamatório", "dose": "0.2 mg/kg", "frequencia": "1x/dia", "duracao": "3-5 dias"},
+            {"nome": "Antibiótico profilático", "dose": "10 mg/kg", "frequencia": "2x/dia", "duracao": "5-7 dias"}
+        ],
+        "Tumor": [
+            {"nome": "Quimioterapia", "dose": "Conforme protocolo", "frequencia": "Semanal", "duracao": "4-6 ciclos"},
+            {"nome": "Corticosteroides", "dose": "0.5-1 mg/kg", "frequencia": "2x/dia", "duracao": "Conforme resposta"},
+            {"nome": "Analgésicos", "dose": "0.1-0.3 mg/kg", "frequencia": "2-3x/dia", "duracao": "Conforme necessário"}
+        ]
+    }
+    return medicamentos.get(diagnostico, [
+        {"nome": "Tratamento sintomático", "dose": "Conforme sintomas", "frequencia": "Conforme necessário", "duracao": "Até melhora"}
+    ])
+
+def sugerir_cirurgias(diagnostico):
+    """Sugere cirurgias baseadas no diagnóstico"""
+    cirurgias = {
+        "Tumor": ["Tumor excision", "Mastectomia", "Amputação", "Biópsia cirúrgica"],
+        "Trauma": ["Reparação de fraturas", "Laparotomia exploratória", "Toracotomia", "Sutura de lacerações"],
+        "Obstrução": ["Enterotomia", "Gastrotomia", "Uretrostomia", "Cistotomia"],
+        "Hérnia": ["Herniorrafia", "Reparo de hérnia inguinal", "Reparo de hérnia umbilical"],
+        "Fraturas": ["Osteossíntese", "Fixação externa", "Enxerto ósseo", "Artrópode"]
+    }
+    return cirurgias.get(diagnostico, ["Avaliação cirúrgica necessária"])
+
 # Sistema de abas
 tab_names = ["🔍 Predição", "💬 Chat IA"]
 tabs = st.tabs(tab_names)
@@ -432,15 +485,21 @@ if st.button("🔍 Realizar Predição", type="primary", use_container_width=Tru
         sintomas = [febre, apatia, perda_peso, vomito, diarreia, tosse, letargia, feridas_cutaneas, poliuria, polidipsia]
         sintomas_values = [1 if s else 0 for s in sintomas]
         
-        # Criar array com todos os dados
+        # Criar array com todos os dados (39 features)
         dados_predicao = np.array([
-            especie == "Canina", especie == "Felina",  # One-hot encoding para espécie
-            idade_anos,
-            sexo == "M",  # 1 para macho, 0 para fêmea
+            # Espécie (2 features)
+            especie == "Canina", especie == "Felina",
+            # Idade e sexo (2 features)
+            idade_anos, sexo == "M",
+            # Exames laboratoriais básicos (8 features)
             hemoglobina, hematocrito, leucocitos, 10.0,  # Plaquetas padrão
-            glicose, ureia, creatinina, alt, 50.0,  # AST padrão
-            100.0, 7.0, 3.5, 200.0, 100.0, 2.0  # Valores padrão para outros exames
-        ] + sintomas_values).reshape(1, -1)
+            glicose, ureia, creatinina, alt,
+            # Mais exames laboratoriais (10 features)
+            50.0,  # AST padrão
+            100.0, 7.0, 3.5, 200.0, 100.0, 2.0,  # Outros exames padrão
+            1.0, 1.5, 2.0,  # Mais 3 exames padrão
+            # Sintomas clínicos (17 features)
+        ] + sintomas_values + [0, 0, 0, 0, 0, 0, 0]).reshape(1, -1)
         
         # Fazer predição
         predicao = modelo.predict(dados_predicao)
@@ -455,6 +514,33 @@ if st.button("🔍 Realizar Predição", type="primary", use_container_width=Tru
         st.markdown(f"### 🎯 **Diagnóstico Predito: {diagnostico_predito}**")
         st.markdown(f"### 📊 **Confiança: {confianca:.1f}%**")
         st.markdown('</div>', unsafe_allow_html=True)
+        
+        # Sugestões baseadas no diagnóstico
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.subheader("🏥 Doenças Relacionadas")
+            doencas = sugerir_doencas(diagnostico_predito)
+            for doenca in doencas:
+                st.markdown(f"• {doenca}")
+        
+        with col2:
+            st.subheader("💊 Medicamentos Sugeridos")
+            medicamentos = sugerir_medicamentos(diagnostico_predito)
+            for med in medicamentos:
+                st.markdown(f"**{med['nome']}**")
+                st.markdown(f"  Dose: {med['dose']}")
+                st.markdown(f"  Frequência: {med['frequencia']}")
+                st.markdown(f"  Duração: {med['duracao']}")
+                st.markdown("---")
+        
+        with col3:
+            st.subheader("🔪 Cirurgias Possíveis")
+            cirurgias = sugerir_cirurgias(diagnostico_predito)
+            for cirurgia in cirurgias:
+                st.markdown(f"• {cirurgia}")
+        
+        st.divider()
         
         # Mostrar probabilidades de todos os diagnósticos
         st.subheader("📈 Probabilidades por Diagnóstico")
