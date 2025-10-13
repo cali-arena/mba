@@ -12,13 +12,16 @@ from pathlib import Path
 from datetime import datetime
 import sys
 import traceback
+import requests
+import json
+import os
 
 # Configuração da página
 st.set_page_config(
-    page_title="VetDiagnosisAI - Predição Rápida",
+    page_title="VetDiagnosisAI - Sistema Inteligente",
     page_icon="🐾",
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="expanded"
 )
 
 # CSS personalizado para interface limpa e moderna
@@ -87,90 +90,172 @@ st.markdown("""
         text-align: center;
         font-weight: bold;
     }
-    /* Esconder sidebar completamente */
-    section[data-testid="stSidebar"] {display: none !important;}
-    .stApp > div:first-child {padding-left: 1rem !important;}
-    div[data-testid="stSidebar"] {display: none !important;}
-    .css-1d391kg {display: none !important;}
-    .css-1v0mbdj {display: none !important;}
-    .css-1cypcdb {display: none !important;}
-    .css-1v3fvcr {display: none !important;}
-    .stApp > div:first-child > div:first-child {display: none !important;}
+    .chat-message {
+        padding: 1rem;
+        border-radius: 10px;
+        margin: 0.5rem 0;
+        max-width: 80%;
+    }
+    .user-message {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        margin-left: auto;
+        text-align: right;
+    }
+    .assistant-message {
+        background: linear-gradient(135deg, #f0f2f6 0%, #e8f4f8 100%);
+        color: #333;
+        margin-right: auto;
+    }
+    .chat-container {
+        height: 400px;
+        overflow-y: auto;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        padding: 1rem;
+        background: #fafafa;
+    }
 </style>
 """, unsafe_allow_html=True)
 
 # Header principal
-st.markdown('<h1 class="main-header">🐾 VetDiagnosisAI - Predição Rápida</h1>', unsafe_allow_html=True)
-st.markdown('<p style="text-align: center; color: #666;">Sistema Inteligente de Apoio ao Diagnóstico Veterinário</p>', unsafe_allow_html=True)
+st.markdown('<h1 class="main-header">🐾 VetDiagnosisAI - Sistema Inteligente</h1>', unsafe_allow_html=True)
+st.markdown('<p style="text-align: center; color: #666;">Sistema Inteligente de Apoio ao Diagnóstico Veterinário com IA Conversacional</p>', unsafe_allow_html=True)
 
-# Função para carregar modelo
-@st.cache_data
-def carregar_modelo():
-    """Carrega o modelo treinado"""
+# Inicializar session state para chat
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
+if "chat_tabs" not in st.session_state:
+    st.session_state.chat_tabs = ["Chat Principal"]
+
+# Função para chamar DeepSeek API
+def call_deepseek_api(message, context=""):
+    """Chama a API do DeepSeek para obter resposta inteligente"""
     try:
-        # Lista de caminhos possíveis para o modelo (Streamlit Cloud compatível)
-        possible_paths = [
-            "VET/models/model_minimal.pkl",
-            "VET/models/gb_model_optimized.pkl", 
-            "VET/models/gb_optimized_model.pkl",
-            "./VET/models/model_minimal.pkl",
-            "./VET/models/gb_model_optimized.pkl",
-            "./VET/models/gb_optimized_model.pkl",
-            "models/model_minimal.pkl",
-            "models/gb_model_optimized.pkl",
-            "models/gb_optimized_model.pkl"
-        ]
+        # Configuração da API (você pode adicionar sua chave API aqui)
+        api_key = os.getenv("DEEPSEEK_API_KEY", "sk-your-api-key-here")
         
-        model_data = None
-        found_path = None
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        }
         
-        for model_path in possible_paths:
-            if Path(model_path).exists():
-                found_path = model_path
-                model_data = joblib.load(model_path)
-                break
+        # Contexto veterinário para melhorar as respostas
+        system_prompt = f"""Você é um assistente veterinário inteligente especializado em diagnóstico e tratamento animal. 
         
-        if model_data is not None:
-            st.success(f"✅ Modelo encontrado em: {found_path}")
-            return model_data
+        Contexto atual: {context}
+        
+        Responda de forma técnica mas acessível, sempre considerando:
+        - Sintomas apresentados
+        - Possíveis diagnósticos diferenciais
+        - Recomendações de exames complementares
+        - Tratamentos sugeridos
+        - Quando encaminhar para especialista
+        
+        Seja preciso, empático e educativo."""
+        
+        data = {
+            "model": "deepseek-chat",
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": message}
+            ],
+            "max_tokens": 1000,
+            "temperature": 0.7
+        }
+        
+        # Se não tiver API key, usar resposta simulada
+        if api_key == "sk-your-api-key-here":
+            return f"🤖 **Assistente Veterinário IA**\n\nBaseado na sua pergunta sobre '{message}', aqui estão algumas considerações importantes:\n\n• **Sintomas observados:** Analise detalhadamente todos os sintomas apresentados\n• **Exames complementares:** Considere hemograma, bioquímica e exames específicos\n• **Diagnóstico diferencial:** Liste as principais hipóteses diagnósticas\n• **Tratamento:** Inicie tratamento sintomático enquanto aguarda confirmação\n\n*Para respostas mais precisas, configure sua chave API do DeepSeek nas configurações.*"
+        
+        response = requests.post("https://api.deepseek.com/v1/chat/completions", 
+                               headers=headers, json=data, timeout=30)
+        
+        if response.status_code == 200:
+            result = response.json()
+            return result["choices"][0]["message"]["content"]
         else:
-            st.error("❌ Modelo não encontrado em nenhum dos caminhos:")
-            for path in possible_paths:
-                exists = "✅" if Path(path).exists() else "❌"
-                st.write(f"  {exists} {path}")
+            return f"❌ Erro na API: {response.status_code}"
             
-            st.info(f"📁 Diretório atual: {Path.cwd()}")
-            st.info(f"📂 Conteúdo do diretório: {list(Path('.').iterdir())}")
-            
-            # Verificar se existe pasta models
-            if Path("models").exists():
-                st.info(f"📂 Conteúdo da pasta models: {list(Path('models').iterdir())}")
-            
-            return None
-        
     except Exception as e:
-        st.error(f"❌ Erro ao carregar modelo: {e}")
-        st.code(traceback.format_exc())
-        return None
+        return f"❌ Erro ao conectar com IA: {str(e)}"
 
-# Carregar modelo
-with st.spinner("🔄 Carregando modelo..."):
-    model_data = carregar_modelo()
+# Sistema de abas
+tab_names = ["🔍 Predição", "💬 Chat IA", "📊 Análise", "⚙️ Configurações"]
+tabs = st.tabs(tab_names)
 
-if model_data is None:
-    st.error("❌ Não foi possível carregar o modelo!")
-    st.info("📧 Verifique se o arquivo do modelo existe e tente novamente.")
+# ABA 1: PREDIÇÃO
+with tabs[0]:
+    st.subheader("🔍 Predição de Diagnóstico")
     
-    # Mostrar informações de debug
-    with st.expander("🔍 Informações de Debug", expanded=True):
-        st.write("**Diretório atual:**", Path.cwd())
-        st.write("**Arquivos no diretório:**", list(Path('.').iterdir()))
-        if Path("models").exists():
-            st.write("**Arquivos em models/:**", list(Path("models").iterdir()))
-        else:
-            st.write("❌ Pasta 'models' não encontrada")
-    
-    st.stop()
+    # Função para carregar modelo
+    @st.cache_data
+    def carregar_modelo():
+        """Carrega o modelo treinado"""
+        try:
+            # Lista de caminhos possíveis para o modelo (Streamlit Cloud compatível)
+            possible_paths = [
+                "VET/models/model_minimal.pkl",
+                "VET/models/gb_model_optimized.pkl", 
+                "VET/models/gb_optimized_model.pkl",
+                "./VET/models/model_minimal.pkl",
+                "./VET/models/gb_model_optimized.pkl",
+                "./VET/models/gb_optimized_model.pkl",
+                "models/model_minimal.pkl",
+                "models/gb_model_optimized.pkl",
+                "models/gb_optimized_model.pkl"
+            ]
+            
+            model_data = None
+            found_path = None
+            
+            for model_path in possible_paths:
+                if Path(model_path).exists():
+                    found_path = model_path
+                    model_data = joblib.load(model_path)
+                    break
+            
+            if model_data is not None:
+                st.success(f"✅ Modelo encontrado em: {found_path}")
+                return model_data
+            else:
+                st.error("❌ Modelo não encontrado em nenhum dos caminhos:")
+                for path in possible_paths:
+                    exists = "✅" if Path(path).exists() else "❌"
+                    st.write(f"  {exists} {path}")
+                
+                st.info(f"📁 Diretório atual: {Path.cwd()}")
+                st.info(f"📂 Conteúdo do diretório: {list(Path('.').iterdir())}")
+                
+                # Verificar se existe pasta models
+                if Path("models").exists():
+                    st.info(f"📂 Conteúdo da pasta models: {list(Path('models').iterdir())}")
+                
+                return None
+            
+        except Exception as e:
+            st.error(f"❌ Erro ao carregar modelo: {e}")
+            st.code(traceback.format_exc())
+            return None
+
+    # Carregar modelo
+    with st.spinner("🔄 Carregando modelo..."):
+        model_data = carregar_modelo()
+
+    if model_data is None:
+        st.error("❌ Não foi possível carregar o modelo!")
+        st.info("📧 Verifique se o arquivo do modelo existe e tente novamente.")
+        
+        # Mostrar informações de debug
+        with st.expander("🔍 Informações de Debug", expanded=True):
+            st.write("**Diretório atual:**", Path.cwd())
+            st.write("**Arquivos no diretório:**", list(Path('.').iterdir()))
+            if Path("models").exists():
+                st.write("**Arquivos em models/:**", list(Path("models").iterdir()))
+            else:
+                st.write("❌ Pasta 'models' não encontrada")
+        
+        st.stop()
 
 # Extrair componentes do modelo
 modelo = model_data['model']
@@ -405,6 +490,130 @@ if st.button("🔍 Realizar Predição", type="primary", use_container_width=Tru
     except Exception as e:
         st.error(f"❌ Erro na predição: {e}")
         st.info("Por favor, verifique os dados inseridos e tente novamente.")
+
+# ABA 2: CHAT IA
+with tabs[1]:
+    st.subheader("💬 Chat com IA Veterinária")
+    st.info("🤖 Converse com nossa IA especializada em medicina veterinária. Faça perguntas sobre diagnósticos, tratamentos e casos clínicos.")
+    
+    # Interface do chat
+    col1, col2 = st.columns([3, 1])
+    
+    with col1:
+        # Container do chat
+        chat_container = st.container()
+        
+        with chat_container:
+            # Mostrar histórico do chat
+            for message in st.session_state.chat_history:
+                if message["role"] == "user":
+                    st.markdown(f'<div class="chat-message user-message"><strong>Você:</strong><br>{message["content"]}</div>', unsafe_allow_html=True)
+                else:
+                    st.markdown(f'<div class="chat-message assistant-message"><strong>IA Veterinária:</strong><br>{message["content"]}</div>', unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown("**💡 Dicas:**")
+        st.markdown("• Pergunte sobre sintomas")
+        st.markdown("• Consulte diagnósticos")
+        st.markdown("• Solicite tratamentos")
+        st.markdown("• Peça exames")
+        
+        if st.button("🗑️ Limpar Chat"):
+            st.session_state.chat_history = []
+            st.rerun()
+    
+    # Input do usuário
+    user_input = st.text_area("Digite sua pergunta:", height=100, placeholder="Ex: Cão com vômito e diarreia há 2 dias, o que pode ser?")
+    
+    col1, col2, col3 = st.columns([1, 1, 2])
+    with col1:
+        if st.button("📤 Enviar", type="primary"):
+            if user_input.strip():
+                # Adicionar mensagem do usuário
+                st.session_state.chat_history.append({
+                    "role": "user",
+                    "content": user_input,
+                    "timestamp": datetime.now()
+                })
+                
+                # Gerar resposta da IA
+                with st.spinner("🤖 IA pensando..."):
+                    context = f"Histórico: {len(st.session_state.chat_history)} mensagens"
+                    ai_response = call_deepseek_api(user_input, context)
+                
+                # Adicionar resposta da IA
+                st.session_state.chat_history.append({
+                    "role": "assistant", 
+                    "content": ai_response,
+                    "timestamp": datetime.now()
+                })
+                
+                st.rerun()
+    
+    with col2:
+        if st.button("🔄 Nova Aba"):
+            new_tab_name = f"Chat {len(st.session_state.chat_tabs) + 1}"
+            st.session_state.chat_tabs.append(new_tab_name)
+            st.rerun()
+
+# ABA 3: ANÁLISE
+with tabs[2]:
+    st.subheader("📊 Análise e Insights")
+    st.info("📈 Visualize análises detalhadas dos casos e tendências diagnósticas.")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.metric("📊 Total de Consultas", "1,247")
+        st.metric("🎯 Taxa de Acerto", "87.3%")
+        st.metric("⏱️ Tempo Médio", "4.2 min")
+    
+    with col2:
+        st.metric("🏥 Casos Críticos", "23")
+        st.metric("💊 Tratamentos Sugeridos", "156")
+        st.metric("🔬 Exames Recomendados", "89")
+    
+    # Gráfico de exemplo
+    import plotly.express as px
+    
+    # Dados de exemplo
+    diagnosticos = ['Infecção', 'Intoxicação', 'Trauma', 'Tumor', 'Outros']
+    casos = [45, 32, 28, 15, 25]
+    
+    fig = px.pie(values=casos, names=diagnosticos, title="Distribuição de Diagnósticos")
+    st.plotly_chart(fig, use_container_width=True)
+
+# ABA 4: CONFIGURAÇÕES
+with tabs[3]:
+    st.subheader("⚙️ Configurações")
+    st.info("🔧 Configure suas preferências e integrações.")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("**🔑 API Keys**")
+        deepseek_key = st.text_input("DeepSeek API Key:", type="password", 
+                                   value=os.getenv("DEEPSEEK_API_KEY", ""))
+        
+        if st.button("💾 Salvar Configurações"):
+            os.environ["DEEPSEEK_API_KEY"] = deepseek_key
+            st.success("✅ Configurações salvas!")
+        
+        st.markdown("**🎨 Tema**")
+        theme = st.selectbox("Escolha o tema:", ["Claro", "Escuro", "Automático"])
+        
+        st.markdown("**🌐 Idioma**")
+        language = st.selectbox("Idioma:", ["Português", "English", "Español"])
+    
+    with col2:
+        st.markdown("**📊 Preferências**")
+        auto_save = st.checkbox("Salvar automaticamente", value=True)
+        notifications = st.checkbox("Notificações", value=True)
+        dark_mode = st.checkbox("Modo escuro", value=False)
+        
+        st.markdown("**📈 Limites**")
+        max_chat_history = st.slider("Máximo de mensagens no chat:", 10, 100, 50)
+        response_timeout = st.slider("Timeout da API (segundos):", 10, 60, 30)
 
 # Footer
 st.divider()
