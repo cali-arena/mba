@@ -87,6 +87,15 @@ st.markdown("""
         text-align: center;
         font-weight: bold;
     }
+    /* Esconder sidebar completamente */
+    section[data-testid="stSidebar"] {display: none !important;}
+    .stApp > div:first-child {padding-left: 1rem !important;}
+    div[data-testid="stSidebar"] {display: none !important;}
+    .css-1d391kg {display: none !important;}
+    .css-1v0mbdj {display: none !important;}
+    .css-1cypcdb {display: none !important;}
+    .css-1v3fvcr {display: none !important;}
+    .stApp > div:first-child > div:first-child {display: none !important;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -99,29 +108,65 @@ st.markdown('<p style="text-align: center; color: #666;">Sistema Inteligente de 
 def carregar_modelo():
     """Carrega o modelo treinado"""
     try:
-        model_path = Path("models/gb_optimized_model.pkl")
-        if model_path.exists():
-            with open(model_path, 'rb') as f:
-                model_data = joblib.load(f)
+        # Lista de caminhos possíveis para o modelo (Streamlit Cloud compatível)
+        possible_paths = [
+            "models/model_minimal.pkl",
+            "models/gb_model_optimized.pkl",
+            "models/gb_optimized_model.pkl",
+            "./models/model_minimal.pkl",
+            "./models/gb_model_optimized.pkl",
+            "./models/gb_optimized_model.pkl"
+        ]
+        
+        model_data = None
+        found_path = None
+        
+        for model_path in possible_paths:
+            if Path(model_path).exists():
+                found_path = model_path
+                model_data = joblib.load(model_path)
+                break
+        
+        if model_data is not None:
+            st.success(f"✅ Modelo encontrado em: {found_path}")
             return model_data
         else:
+            st.error("❌ Modelo não encontrado em nenhum dos caminhos:")
+            for path in possible_paths:
+                exists = "✅" if Path(path).exists() else "❌"
+                st.write(f"  {exists} {path}")
+            
+            st.info(f"📁 Diretório atual: {Path.cwd()}")
+            st.info(f"📂 Conteúdo do diretório: {list(Path('.').iterdir())}")
+            
+            # Verificar se existe pasta models
+            if Path("models").exists():
+                st.info(f"📂 Conteúdo da pasta models: {list(Path('models').iterdir())}")
+            
             return None
+        
     except Exception as e:
-        st.error(f"Erro ao carregar modelo: {e}")
+        st.error(f"❌ Erro ao carregar modelo: {e}")
+        st.code(traceback.format_exc())
         return None
 
-# Carregar modelo com tratamento de erro
-try:
+# Carregar modelo
+with st.spinner("🔄 Carregando modelo..."):
     model_data = carregar_modelo()
+
+if model_data is None:
+    st.error("❌ Não foi possível carregar o modelo!")
+    st.info("📧 Verifique se o arquivo do modelo existe e tente novamente.")
     
-    if model_data is None:
-        st.error("❌ Modelo não encontrado! Por favor, treine o modelo primeiro no app gerencial.")
-        st.info("📧 Entre em contato com o administrador do sistema.")
-        st.stop()
-        
-except Exception as e:
-    st.error(f"❌ Erro ao carregar o modelo: {str(e)}")
-    st.code(traceback.format_exc())
+    # Mostrar informações de debug
+    with st.expander("🔍 Informações de Debug", expanded=True):
+        st.write("**Diretório atual:**", Path.cwd())
+        st.write("**Arquivos no diretório:**", list(Path('.').iterdir()))
+        if Path("models").exists():
+            st.write("**Arquivos em models/:**", list(Path("models").iterdir()))
+        else:
+            st.write("❌ Pasta 'models' não encontrada")
+    
     st.stop()
 
 # Extrair componentes do modelo
