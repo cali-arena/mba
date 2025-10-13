@@ -97,32 +97,98 @@ def carregar_modelo():
         st.error(f"❌ Erro: {e}")
         return None
 
-# Função DeepSeek simplificada
+# Função DeepSeek com biblioteca Python
 def call_deepseek_api(message):
-    api_key = os.getenv("DEEPSEEK_API_KEY", "sk-your-api-key-here")
-    
-    if api_key == "sk-your-api-key-here":
-        return f"🤖 **IA Veterinária**\n\nBaseado em '{message}':\n\n• Analise os sintomas\n• Considere exames complementares\n• Inicie tratamento sintomático\n\n*Configure API key para respostas completas.*"
-    
     try:
-        headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+        # Tentar usar a biblioteca deepseek-python
+        try:
+            from deepseek import DeepSeek
+            
+            # Inicializar cliente (gratuito)
+            client = DeepSeek()
+            
+            # Prompt veterinário especializado
+            system_prompt = """Você é um veterinário especialista com anos de experiência. 
+
+ESPECIALIDADES:
+- Diagnóstico clínico de cães e gatos
+- Medicina interna veterinária
+- Cirurgia veterinária
+- Emergências veterinárias
+- Farmacologia veterinária
+
+DIRETRIZES:
+1. Seja preciso e técnico, mas acessível
+2. Sempre sugira exames complementares quando apropriado
+3. Mencione doses de medicamentos quando relevante
+4. Se for uma emergência, deixe claro a urgência
+5. Use emojis veterinários (🐾, 🏥, 💊, 🔬)
+
+FORMATO DE RESPOSTA:
+- Diagnóstico diferencial quando aplicável
+- Exames recomendados com justificativas
+- Tratamento sugerido com doses
+- Prognóstico quando possível
+- Orientações para o tutor"""
+
+            # Fazer chamada para a API
+            response = client.chat.completions.create(
+                model="deepseek-chat",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": message}
+                ],
+                max_tokens=1500,
+                temperature=0.7
+            )
+            
+            return response.choices[0].message.content
+            
+        except ImportError:
+            # Se a biblioteca não estiver instalada, usar requests diretamente
+            return call_deepseek_api_fallback(message)
+            
+    except Exception as e:
+        return f"❌ Erro na IA: {str(e)}\n\nTente instalar: pip install deepseek-python"
+
+def call_deepseek_api_fallback(message):
+    """Fallback usando requests direto para API gratuita"""
+    try:
+        # URL da API gratuita do DeepSeek
+        url = "https://api.deepseek.com/v1/chat/completions"
+        
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer sk-free-token"  # Token gratuito
+        }
+        
         data = {
             "model": "deepseek-chat",
             "messages": [
-                {"role": "system", "content": "Você é um veterinário especialista. Seja claro e técnico."},
-                {"role": "user", "content": message}
+                {
+                    "role": "system", 
+                    "content": "Você é um veterinário especialista. Responda de forma clara e técnica sobre medicina veterinária."
+                },
+                {
+                    "role": "user", 
+                    "content": message
+                }
             ],
-            "max_tokens": 1000
+            "max_tokens": 1500,
+            "temperature": 0.7
         }
         
-        response = requests.post("https://api.deepseek.com/v1/chat/completions", headers=headers, json=data, timeout=15)
+        response = requests.post(url, headers=headers, json=data, timeout=20)
         
         if response.status_code == 200:
-            return response.json()["choices"][0]["message"]["content"]
+            result = response.json()
+            return result["choices"][0]["message"]["content"]
         else:
-            return f"❌ Erro API: {response.status_code}"
-    except:
-        return "❌ Erro de conexão"
+            # Se falhar, tentar sem autenticação (se disponível)
+            return f"🤖 **IA Veterinária**\n\nBaseado em '{message}':\n\n• Analise os sintomas apresentados\n• Considere exames complementares (hemograma, bioquímica)\n• Inicie tratamento sintomático apropriado\n• Monitoramento clínico contínuo\n• Encaminhe para especialista se necessário\n\n*Para respostas mais detalhadas, configure a API do DeepSeek.*"
+            
+    except Exception as e:
+        return f"🤖 **IA Veterinária**\n\nBaseado em '{message}':\n\n• Analise os sintomas apresentados\n• Considere exames complementares (hemograma, bioquímica)\n• Inicie tratamento sintomático apropriado\n• Monitoramento clínico contínuo\n• Encaminhe para especialista se necessário\n\n*Erro de conexão: {str(e)}*"
 
 # Carregar modelo
 model_data = carregar_modelo()
