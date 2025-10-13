@@ -357,49 +357,49 @@ with tabs[0]:
 def carregar_modelo():
     """Carrega o modelo treinado"""
     try:
-            # Lista de caminhos possíveis para o modelo (Streamlit Cloud compatível)
-            possible_paths = [
-                "VET/models/model_minimal.pkl",
-                "VET/models/gb_model_optimized.pkl", 
-                "VET/models/gb_optimized_model.pkl",
-                "./VET/models/model_minimal.pkl",
-                "./VET/models/gb_model_optimized.pkl",
-                "./VET/models/gb_optimized_model.pkl",
-                "models/model_minimal.pkl",
-                "models/gb_model_optimized.pkl",
-                "models/gb_optimized_model.pkl"
-            ]
+        # Lista de caminhos possíveis para o modelo (Streamlit Cloud compatível)
+        possible_paths = [
+            "VET/models/model_minimal.pkl",
+            "VET/models/gb_model_optimized.pkl", 
+            "VET/models/gb_optimized_model.pkl",
+            "./VET/models/model_minimal.pkl",
+            "./VET/models/gb_model_optimized.pkl",
+            "./VET/models/gb_optimized_model.pkl",
+            "models/model_minimal.pkl",
+            "models/gb_model_optimized.pkl",
+            "models/gb_optimized_model.pkl"
+        ]
+        
+        model_data = None
+        found_path = None
+        
+        for model_path in possible_paths:
+            if Path(model_path).exists():
+                found_path = model_path
+                model_data = joblib.load(model_path)
+                break
+        
+        if model_data is not None:
+            st.success(f"✅ Modelo encontrado em: {found_path}")
+            return model_data
+        else:
+            st.error("❌ Modelo não encontrado em nenhum dos caminhos:")
+            for path in possible_paths:
+                exists = "✅" if Path(path).exists() else "❌"
+                st.write(f"  {exists} {path}")
             
-            model_data = None
-            found_path = None
+            st.info(f"📁 Diretório atual: {Path.cwd()}")
+            st.info(f"📂 Conteúdo do diretório: {list(Path('.').iterdir())}")
             
-            for model_path in possible_paths:
-                if Path(model_path).exists():
-                    found_path = model_path
-                    model_data = joblib.load(model_path)
-                    break
+            # Verificar se existe pasta models
+            if Path("models").exists():
+                st.info(f"📂 Conteúdo da pasta models: {list(Path('models').iterdir())}")
             
-            if model_data is not None:
-                st.success(f"✅ Modelo encontrado em: {found_path}")
-                return model_data
-            else:
-                st.error("❌ Modelo não encontrado em nenhum dos caminhos:")
-                for path in possible_paths:
-                    exists = "✅" if Path(path).exists() else "❌"
-                    st.write(f"  {exists} {path}")
-                
-                st.info(f"📁 Diretório atual: {Path.cwd()}")
-                st.info(f"📂 Conteúdo do diretório: {list(Path('.').iterdir())}")
-                
-                # Verificar se existe pasta models
-                if Path("models").exists():
-                    st.info(f"📂 Conteúdo da pasta models: {list(Path('models').iterdir())}")
-                
-                return None
-            
-        except Exception as e:
-            st.error(f"❌ Erro ao carregar modelo: {e}")
-            st.code(traceback.format_exc())
+            return None
+        
+    except Exception as e:
+        st.error(f"❌ Erro ao carregar modelo: {e}")
+        st.code(traceback.format_exc())
         return None
 
 # Carregar modelo
