@@ -381,8 +381,8 @@ def carregar_modelo():
             
             if model_data is not None:
                 st.success(f"✅ Modelo encontrado em: {found_path}")
-            return model_data
-        else:
+                return model_data
+            else:
                 st.error("❌ Modelo não encontrado em nenhum dos caminhos:")
                 for path in possible_paths:
                     exists = "✅" if Path(path).exists() else "❌"
