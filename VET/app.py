@@ -18,10 +18,15 @@ import os
 
 # Configuração da página
 st.set_page_config(
-    page_title="VetDiagnosisAI - Sistema Inteligente",
+    page_title="DIAGVET IA - Sistema Veterinário",
     page_icon="🐾",
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="collapsed",
+    menu_items={
+        'Get Help': None,
+        'Report a bug': None,
+        'About': "DIAGVET IA - Sistema Inteligente de Diagnóstico Veterinário"
+    }
 )
 
 # CSS personalizado para interface limpa e moderna
@@ -158,11 +163,102 @@ st.markdown("""
     .css-1cypcdb {display: none !important;}
     .css-1v3fvcr {display: none !important;}
     .stApp > div:first-child > div:first-child {display: none !important;}
+    
+    /* Responsividade para mobile */
+    @media (max-width: 768px) {
+        .main-header {
+            font-size: 1.8rem !important;
+            padding: 0.5rem !important;
+            margin: 0.5rem 0 !important;
+        }
+        
+        .main-container {
+            padding: 0.5rem !important;
+            margin: 0 !important;
+        }
+        
+        .form-section {
+            padding: 0.5rem !important;
+            margin: 0.25rem !important;
+        }
+        
+        .prediction-box {
+            padding: 1rem !important;
+            margin: 0.5rem 0 !important;
+        }
+        
+        .chat-message {
+            max-width: 95% !important;
+            padding: 10px !important;
+            font-size: 14px !important;
+        }
+        
+        .stTextArea > div > div > textarea {
+            height: 80px !important;
+            font-size: 16px !important;
+        }
+        
+        .stButton > button {
+            width: 100% !important;
+            margin: 0.25rem 0 !important;
+            font-size: 14px !important;
+            padding: 0.5rem !important;
+        }
+        
+        .stTabs [data-baseweb="tab-list"] {
+            gap: 0.5rem !important;
+        }
+        
+        .stTabs [data-baseweb="tab"] {
+            padding: 0.5rem 1rem !important;
+            font-size: 14px !important;
+        }
+        
+        /* Forçar layout em coluna única no mobile */
+        .stColumns {
+            flex-direction: column !important;
+        }
+        
+        .stColumns > div {
+            width: 100% !important;
+            margin-bottom: 1rem !important;
+        }
+        
+        /* Melhorar scroll no mobile */
+        .stApp {
+            overflow-x: hidden !important;
+        }
+        
+        /* Ajustar espaçamentos */
+        .stContainer {
+            padding: 0.25rem !important;
+        }
+        
+        /* Melhorar botões no mobile */
+        .stButton {
+            margin: 0.25rem 0 !important;
+        }
+    }
+    
+    /* Correções específicas para iOS Safari */
+    @media screen and (max-width: 768px) and (-webkit-min-device-pixel-ratio: 2) {
+        .stTextArea > div > div > textarea {
+            -webkit-appearance: none !important;
+            border-radius: 8px !important;
+        }
+        
+        .stButton > button {
+            -webkit-appearance: none !important;
+            border-radius: 8px !important;
+        }
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# Header principal
-st.markdown('<h1 class="main-header">🐾 DIAGVET IA</h1>', unsafe_allow_html=True)
+# Container responsivo principal
+with st.container():
+    # Header principal
+    st.markdown('<h1 class="main-header">🐾 DIAGVET IA</h1>', unsafe_allow_html=True)
 
 # Inicializar session state para chat
 if "chat_history" not in st.session_state:
@@ -870,8 +966,8 @@ with tabs[1]:
     st.subheader("💬 Chat com IA Veterinária")
     st.info("🤖 Converse com nossa IA especializada em medicina veterinária. Faça perguntas sobre diagnósticos, tratamentos e casos clínicos.")
     
-    # Interface do chat
-    col1, col2 = st.columns([3, 1])
+    # Interface do chat (responsivo)
+    col1, col2 = st.columns([2, 1])
     
     with col1:
         # Container do chat
