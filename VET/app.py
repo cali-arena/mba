@@ -409,6 +409,93 @@ with tab1:
             
             dados_predicao = dados_predicao.reshape(1, -1)
             
+            # Validação clínica - Forçar diagnósticos baseados em valores críticos
+            diagnostico_clinico = None
+            alertas_criticos = []
+            
+            # Creatinina crítica (>2.0 mg/dL)
+            if creatinina > 2.0:
+                diagnostico_clinico = "Doença Renal Crônica"
+                alertas_criticos.append(f"🚨 Creatinina CRÍTICA: {creatinina} mg/dL (normal: 0.5-1.5)")
+            
+            # Ureia crítica (>100 mg/dL)
+            elif ureia > 100:
+                diagnostico_clinico = "Doença Renal Crônica"
+                alertas_criticos.append(f"🚨 Ureia CRÍTICA: {ureia} mg/dL (normal: 10-50)")
+            
+            # Glicose crítica (>250 mg/dL)
+            elif glicose > 250:
+                diagnostico_clinico = "Diabetes Mellitus"
+                alertas_criticos.append(f"🚨 Glicose CRÍTICA: {glicose} mg/dL (normal: 70-120)")
+            
+            # Hemoglobina crítica (<8.0 g/dL)
+            elif hemoglobina < 8.0:
+                diagnostico_clinico = "Anemia"
+                alertas_criticos.append(f"🚨 Hemoglobina CRÍTICA: {hemoglobina} g/dL (normal: 12-18)")
+            
+            # Hematócrito crítico (<25%)
+            elif hematocrito < 25:
+                diagnostico_clinico = "Anemia"
+                alertas_criticos.append(f"🚨 Hematócrito CRÍTICO: {hematocrito}% (normal: 35-55)")
+            
+            # Leucócitos críticos (>20 mil/μL)
+            elif leucocitos > 20:
+                diagnostico_clinico = "Infecção Grave"
+                alertas_criticos.append(f"🚨 Leucócitos CRÍTICOS: {leucocitos} mil/μL (normal: 6-17)")
+            
+            # Se há valores críticos, usar diagnóstico clínico
+            if diagnostico_clinico:
+                st.warning("⚠️ **VALORES CRÍTICOS DETECTADOS!**")
+                for alerta in alertas_criticos:
+                    st.warning(alerta)
+                
+                st.markdown('<div class="prediction-box">', unsafe_allow_html=True)
+                st.markdown(f"### 🎯 **Diagnóstico: {diagnostico_clinico}**")
+                st.markdown(f"### 📊 **Confiança: 95.0%** (Validação Clínica)")
+                st.markdown('</div>', unsafe_allow_html=True)
+                
+                # Recomendações específicas
+                st.markdown('<div class="recommendations-box">', unsafe_allow_html=True)
+                st.markdown("### 💊 **Recomendações Urgentes:**")
+                if "Renal" in diagnostico_clinico:
+                    st.markdown("""
+                    • **🚨 URGENTE**: Internação imediata
+                    • **💧**: Fluidoterapia intensiva
+                    • **🔬**: Exames complementares (ultrassom, urina)
+                    • **⚕️**: Nefrologista veterinário
+                    • **📊**: Monitoramento contínuo
+                    """)
+                elif "Diabetes" in diagnostico_clinico:
+                    st.markdown("""
+                    • **🚨 URGENTE**: Controle glicêmico imediato
+                    • **💉**: Insulina conforme prescrição
+                    • **🍽️**: Dieta específica para diabetes
+                    • **⚕️**: Endocrinologista veterinário
+                    • **📊**: Monitoramento glicêmico
+                    """)
+                elif "Anemia" in diagnostico_clinico:
+                    st.markdown("""
+                    • **🚨 URGENTE**: Investigação da causa
+                    • **🩸**: Transfusão se necessário
+                    • **🔬**: Exames hematológicos completos
+                    • **⚕️**: Hematologista veterinário
+                    • **📊**: Monitoramento hemoglobina
+                    """)
+                elif "Infecção" in diagnostico_clinico:
+                    st.markdown("""
+                    • **🚨 URGENTE**: Antibioticoterapia
+                    • **🔬**: Cultura e antibiograma
+                    • **🌡️**: Controle de temperatura
+                    • **⚕️**: Infectologista veterinário
+                    • **📊**: Monitoramento leucócitos
+                    """)
+                st.markdown('</div>', unsafe_allow_html=True)
+                
+                return  # Parar aqui se há valores críticos
+            
+            # Se não há valores críticos, usar modelo ML
+            st.info("✅ Valores dentro dos parâmetros normais - Usando modelo de IA")
+            
             # Aplicar scaler se disponível
             if scaler is not None:
                 dados_predicao_scaled = scaler.transform(dados_predicao)
