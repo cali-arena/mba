@@ -320,6 +320,12 @@ modelo = model_data['model']
 scaler = model_data.get('scaler', None)
 le_diagnostico = model_data.get('le_diagnostico', None)
 
+# Debug: mostrar informações dos componentes
+st.write("🔍 Debug - Componentes do modelo:")
+st.write(f"Modelo: {type(modelo)}")
+st.write(f"Scaler: {type(scaler) if scaler else 'None'}")
+st.write(f"LabelEncoder: {type(le_diagnostico) if le_diagnostico else 'None'}")
+
 # Verificar se temos o LabelEncoder
 if le_diagnostico is None:
     st.error("❌ LabelEncoder não encontrado no modelo!")
