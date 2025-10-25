@@ -90,29 +90,18 @@ def carregar_modelo():
             "/app/models/model_minimal.pkl"
         ]
         
-        st.write("🔍 Debug - Tentando carregar modelo...")
-        for i, path in enumerate(possible_paths):
-            st.write(f"  {i+1}. Testando: {path}")
+        for path in possible_paths:
             if Path(path).exists():
-                st.write(f"  ✅ Encontrado: {path}")
                 try:
                     model_data = joblib.load(path)
-                    st.write(f"  ✅ Arquivo carregado com sucesso!")
-                    # Verificar se é um dicionário com modelo e scaler
                     if isinstance(model_data, dict):
-                        st.write(f"  ✅ Modelo carregado como dicionário com chaves: {list(model_data.keys())}")
                         return model_data
                     else:
-                        # Se é apenas o modelo, retornar como dicionário
-                        st.write(f"  ✅ Modelo carregado como objeto simples do tipo: {type(model_data)}")
                         return {'model': model_data, 'scaler': None, 'le_diagnostico': None}
                 except Exception as load_error:
-                    st.write(f"  ❌ Erro ao carregar arquivo: {load_error}")
                     continue
-            else:
-                st.write(f"  ❌ Não encontrado: {path}")
         
-        st.error("❌ Modelo não encontrado em nenhum caminho!")
+        st.error("❌ Modelo não encontrado!")
         return None
     except Exception as e:
         st.error(f"❌ Erro ao carregar modelo: {e}")
@@ -307,24 +296,10 @@ if model_data is None:
     st.error("❌ Erro ao carregar modelo!")
     st.stop()
 
-# Debug: mostrar informações do modelo
-st.write("🔍 Debug - Informações do modelo:")
-st.write(f"Tipo do model_data: {type(model_data)}")
-if isinstance(model_data, dict):
-    st.write(f"Chaves disponíveis: {list(model_data.keys())}")
-else:
-    st.write("Model_data não é um dicionário")
-
 # Extrair componentes
 modelo = model_data['model']
 scaler = model_data.get('scaler', None)
 le_diagnostico = model_data.get('le_diagnostico', None)
-
-# Debug: mostrar informações dos componentes
-st.write("🔍 Debug - Componentes do modelo:")
-st.write(f"Modelo: {type(modelo)}")
-st.write(f"Scaler: {type(scaler) if scaler else 'None'}")
-st.write(f"LabelEncoder: {type(le_diagnostico) if le_diagnostico else 'None'}")
 
 # Verificar se temos o LabelEncoder
 if le_diagnostico is None:
@@ -381,18 +356,11 @@ with tab1:
     # Botão de predição
     if st.button("🔍 Realizar Predição", type="primary"):
         try:
-            # Debug: mostrar dados de entrada
-            st.write("🔍 Debug - Dados de entrada:")
-            st.write(f"Espécie: {especie}, Idade: {idade_anos}, Peso: {peso_kg}, Sexo: {sexo}")
-            st.write(f"Exames: Hb={hemoglobina}, Ht={hematocrito}, Leu={leucocitos}, Glu={glicose}")
-            st.write(f"Ureia={ureia}, Creat={creatinina}, PT={proteinas_totais}, Alb={albumina}, Eos={eosinofilos}")
-            
             # Definir sintomas_values primeiro
             sintomas = [febre, apatia, perda_peso, vomito, diarreia, tosse, letargia, feridas_cutaneas, poliuria, polidipsia]
             sintomas_values = [1 if s else 0 for s in sintomas]
             
             # Criar array de dados (39 features exatas) - VERSÃO FINAL
-            st.write(f"Sintomas: {sintomas_values}")
             
             # Usar apenas valores reais do formulário (sem valores fixos)
             dados_predicao = np.array([
