@@ -289,12 +289,26 @@ Baseado em sua pergunta sobre "{message}":
 model_data = carregar_modelo()
 
 if model_data is None:
+    st.error("❌ Erro ao carregar modelo!")
     st.stop()
+
+# Debug: mostrar informações do modelo
+st.write("🔍 Debug - Informações do modelo:")
+st.write(f"Tipo do model_data: {type(model_data)}")
+if isinstance(model_data, dict):
+    st.write(f"Chaves disponíveis: {list(model_data.keys())}")
+else:
+    st.write("Model_data não é um dicionário")
 
 # Extrair componentes
 modelo = model_data['model']
-scaler = model_data['scaler']
-le_diagnostico = model_data['le_diagnostico']
+scaler = model_data.get('scaler', None)
+le_diagnostico = model_data.get('le_diagnostico', None)
+
+# Verificar se temos o LabelEncoder
+if le_diagnostico is None:
+    st.error("❌ LabelEncoder não encontrado no modelo!")
+    st.stop()
 
 # Sistema de abas
 tab1, tab2 = st.tabs(["🔍 Predição", "💬 Chat IA"])
