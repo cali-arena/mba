@@ -95,15 +95,20 @@ def carregar_modelo():
             st.write(f"  {i+1}. Testando: {path}")
             if Path(path).exists():
                 st.write(f"  ✅ Encontrado: {path}")
-                model_data = joblib.load(path)
-                # Verificar se é um dicionário com modelo e scaler
-                if isinstance(model_data, dict):
-                    st.write(f"  ✅ Modelo carregado como dicionário com chaves: {list(model_data.keys())}")
-                    return model_data
-                else:
-                    # Se é apenas o modelo, retornar como dicionário
-                    st.write(f"  ✅ Modelo carregado como objeto simples")
-                    return {'model': model_data, 'scaler': None, 'le_diagnostico': None}
+                try:
+                    model_data = joblib.load(path)
+                    st.write(f"  ✅ Arquivo carregado com sucesso!")
+                    # Verificar se é um dicionário com modelo e scaler
+                    if isinstance(model_data, dict):
+                        st.write(f"  ✅ Modelo carregado como dicionário com chaves: {list(model_data.keys())}")
+                        return model_data
+                    else:
+                        # Se é apenas o modelo, retornar como dicionário
+                        st.write(f"  ✅ Modelo carregado como objeto simples do tipo: {type(model_data)}")
+                        return {'model': model_data, 'scaler': None, 'le_diagnostico': None}
+                except Exception as load_error:
+                    st.write(f"  ❌ Erro ao carregar arquivo: {load_error}")
+                    continue
             else:
                 st.write(f"  ❌ Não encontrado: {path}")
         
