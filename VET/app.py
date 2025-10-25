@@ -82,26 +82,29 @@ st.markdown('<h1 class="main-header">🐾 DIAGVET IA</h1>', unsafe_allow_html=Tr
 def carregar_modelo():
     try:
         possible_paths = [
-            "VET/models/model_minimal.pkl",
             "models/model_minimal.pkl",
-            "./VET/models/model_minimal.pkl",
+            "./models/model_minimal.pkl", 
             "model_minimal.pkl",
-            "/app/VET/models/model_minimal.pkl",
-            "/app/models/model_minimal.pkl"
+            "VET/models/model_minimal.pkl",
+            "./VET/models/model_minimal.pkl"
         ]
         
         for path in possible_paths:
-            if Path(path).exists():
-                try:
+            try:
+                if Path(path).exists():
                     model_data = joblib.load(path)
                     if isinstance(model_data, dict):
                         return model_data
                     else:
                         return {'model': model_data, 'scaler': None, 'le_diagnostico': None}
-                except Exception as load_error:
-                    continue
+            except PermissionError as e:
+                st.warning(f"⚠️ Permissão negada para: {path}")
+                continue
+            except Exception as load_error:
+                continue
         
-        st.error("❌ Modelo não encontrado!")
+        st.error("❌ Modelo não encontrado em nenhum caminho!")
+        st.info("💡 Verifique se o arquivo model_minimal.pkl está na pasta models/")
         return None
     except Exception as e:
         st.error(f"❌ Erro ao carregar modelo: {e}")
