@@ -133,7 +133,7 @@ try:
                         # Dataset carregado
                         break
 except Exception as e:
-    st.warning(f"⚠️ Erro ao carregar dados reais: {e}")
+    # Erro ao carregar dados reais
 
 # 2. APENAS dados reais - SEM fallback para sintéticos
 if df_real is not None and len(df_real) > 0:
@@ -172,9 +172,9 @@ else:
                     st.write(f"  - {file.name}")
                 found_files = True
             else:
-                st.warning(f"⚠️ Pasta '{data_path}' existe mas não contém arquivos CSV")
+                # Pasta sem arquivos CSV
         else:
-            st.warning(f"⚠️ Pasta '{data_path}' não encontrada")
+            # Pasta não encontrada
     
     if not found_files:
         st.info("💡 Para usar o sistema, adicione datasets reais nas seguintes pastas com os seguintes nomes:")
@@ -344,7 +344,7 @@ elif pagina == "🤖 Treinar Modelo":
         if 'diagnostico' not in df.columns:
             st.error("❌ Coluna 'diagnostico' não encontrada. Não é possível treinar modelos.")
         else:
-            st.success(f"✅ Dados disponíveis: {len(df)} registros")
+            # Dados disponíveis
             
             # Mostrar informações dos dados
             col1, col2, col3 = st.columns(3)
@@ -379,7 +379,7 @@ elif pagina == "🤖 Treinar Modelo":
                     df_ml['idade_categoria'] = pd.cut(df_ml['idade_anos'], bins=[0, 1, 3, 7, 12, 100], labels=['Filhote', 'Jovem', 'Adulto', 'Maduro', 'Idoso'])
                     df_ml['idade_categoria_encoded'] = LabelEncoder().fit_transform(df_ml['idade_categoria'])
                 except Exception as e:
-                    st.warning(f"⚠️ Erro ao criar categoria de idade: {e}")
+                    # Erro ao criar categoria de idade
                     # Usar categorização simples como fallback
                     df_ml['idade_categoria_encoded'] = (df_ml['idade_anos'] // 5).astype(int)
                 
@@ -390,7 +390,7 @@ elif pagina == "🤖 Treinar Modelo":
                     df_ml['idade_senior'] = (df_ml['idade_anos'] > 7).astype(int)
                     df_ml['idade_filhote'] = (df_ml['idade_anos'] < 1).astype(int)
                 except Exception as e:
-                    st.warning(f"⚠️ Erro ao criar features de idade: {e}")
+                    # Erro ao criar features de idade
             
             # 3. Features de exames laboratoriais combinados avançados
             exames_cols = ['hemoglobina', 'hematocrito', 'leucocitos', 'glicose', 'ureia', 'creatinina', 'alt', 'ast', 'fosfatase_alcalina', 'proteinas_totais', 'albumina']
@@ -424,7 +424,7 @@ elif pagina == "🤖 Treinar Modelo":
                     df_ml['severidade_sintomas'] = pd.cut(df_ml['total_sintomas'], bins=[-1, 0, 1, 3, 5, 10], labels=['Assintomático', 'Leve', 'Moderado', 'Severo', 'Crítico'])
                     df_ml['severidade_sintomas_encoded'] = LabelEncoder().fit_transform(df_ml['severidade_sintomas'])
                 except Exception as e:
-                    st.warning(f"⚠️ Erro ao criar features de sintomas: {e}")
+                    # Erro ao criar features de sintomas
                     # Fallback simples
                     df_ml['total_sintomas'] = df_ml[sintomas_disponiveis].sum(axis=1)
                     df_ml['severidade_sintomas_encoded'] = (df_ml['total_sintomas'] > 2).astype(int)
@@ -455,7 +455,7 @@ elif pagina == "🤖 Treinar Modelo":
                 
                 # Verificar se temos features suficientes
                 if len(feature_cols) < 3:
-                    st.warning("⚠️ Poucas features disponíveis. Usando todas as colunas numéricas.")
+                    # Poucas features disponíveis
                     feature_cols = [col for col in numeric_cols if col not in ['diagnostico_encoded']]
                 
                 X = df_ml[feature_cols].fillna(df_ml[feature_cols].mean())
@@ -502,7 +502,7 @@ elif pagina == "🤖 Treinar Modelo":
                     # Features polinomiais criadas
                     X = X_poly
                 except Exception as e:
-                    st.warning(f"⚠️ Erro ao criar features polinomiais: {e}")
+                    # Erro ao criar features polinomiais
             
             # Seleção de Features
             if use_feature_selection:
@@ -517,7 +517,7 @@ elif pagina == "🤖 Treinar Modelo":
                     # Features selecionadas
                     X = X_selected
                 except Exception as e:
-                    st.warning(f"⚠️ Erro na seleção de features: {e}")
+                    # Erro na seleção de features
             
             # Gradient Boosting Ultra-Otimizado
             st.subheader("🎯 Gradient Boosting Ultra-Otimizado")
@@ -621,7 +621,7 @@ elif pagina == "🤖 Treinar Modelo":
                     st.session_state.model_trained = True
                     
                 except Exception as e:
-                    st.warning(f"⚠️ Erro ao salvar modelo: {e}")
+                    # Erro ao salvar modelo
                     # Salvar pelo menos no session state
                     st.session_state.gb_model = gb_model
                     st.session_state.scaler = scaler
@@ -828,7 +828,7 @@ elif pagina == "🔍 Predição":
                 st.error(f"❌ Erro na predição: {str(e)}")
     
     else:
-        st.warning("⚠️ Nenhum modelo treinado. Por favor, treine um modelo primeiro na aba 'Treinar Modelo'.")
+        # Nenhum modelo treinado
 
 elif pagina == "📈 Estatísticas":
     st.header("📈 Estatísticas Detalhadas")
