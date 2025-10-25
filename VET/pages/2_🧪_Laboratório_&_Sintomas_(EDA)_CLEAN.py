@@ -16,7 +16,6 @@ warnings.filterwarnings('ignore')
 # ARQUIVO COMPLETAMENTE NOVO - SEM SCATTER PLOT PROBLEMÁTICO
 # VERSÃO: 2025-10-25 - CORREÇÃO CRÍTICA FINAL
 # COMMIT: 8e0633f - FINAL FIX
-# ARQUIVO CLEAN - SEM SCATTER PLOT
 
 # Configuração da página
 st.set_page_config(
