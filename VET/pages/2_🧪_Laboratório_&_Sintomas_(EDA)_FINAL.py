@@ -14,7 +14,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 # ARQUIVO COMPLETAMENTE NOVO - SEM SCATTER PLOT PROBLEMÁTICO
-# VERSÃO: 2025-10-25 - CORREÇÃO CRÍTICA FINAL
+# VERSÃO: 2025-10-25 - CORREÇÃO CRÍTICA
 
 # Configuração da página
 st.set_page_config(
@@ -438,7 +438,7 @@ elif analise_tipo == "Outliers":
             use_container_width=True,
             hide_index=True
         )
-
+        
         # Download dos outliers
         csv_outliers = df_outliers.to_csv(index=False)
         st.download_button(
