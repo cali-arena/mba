@@ -84,23 +84,33 @@ def carregar_modelo():
         possible_paths = [
             "VET/models/model_minimal.pkl",
             "models/model_minimal.pkl",
-            "./VET/models/model_minimal.pkl"
+            "./VET/models/model_minimal.pkl",
+            "model_minimal.pkl",
+            "/app/VET/models/model_minimal.pkl",
+            "/app/models/model_minimal.pkl"
         ]
         
-        for path in possible_paths:
+        st.write("🔍 Debug - Tentando carregar modelo...")
+        for i, path in enumerate(possible_paths):
+            st.write(f"  {i+1}. Testando: {path}")
             if Path(path).exists():
+                st.write(f"  ✅ Encontrado: {path}")
                 model_data = joblib.load(path)
                 # Verificar se é um dicionário com modelo e scaler
                 if isinstance(model_data, dict):
+                    st.write(f"  ✅ Modelo carregado como dicionário com chaves: {list(model_data.keys())}")
                     return model_data
                 else:
                     # Se é apenas o modelo, retornar como dicionário
-                    return {'model': model_data, 'scaler': None}
+                    st.write(f"  ✅ Modelo carregado como objeto simples")
+                    return {'model': model_data, 'scaler': None, 'le_diagnostico': None}
+            else:
+                st.write(f"  ❌ Não encontrado: {path}")
         
-        st.error("❌ Modelo não encontrado!")
+        st.error("❌ Modelo não encontrado em nenhum caminho!")
         return None
     except Exception as e:
-        st.error(f"❌ Erro: {e}")
+        st.error(f"❌ Erro ao carregar modelo: {e}")
         return None
 
 # Função DeepSeek simplificada com API gratuita
