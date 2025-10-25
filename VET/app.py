@@ -420,6 +420,10 @@ with tab1:
             # Versão alternativa: usar apenas valores reais do formulário
             st.write("🔄 Versão alternativa - Apenas valores do formulário:")
             
+            # Definir sintomas_values primeiro
+            sintomas = [febre, apatia, perda_peso, vomito, diarreia, tosse, letargia, feridas_cutaneas, poliuria, polidipsia]
+            sintomas_values = [1 if s else 0 for s in sintomas]
+            
             # Criar array apenas com valores reais (sem valores fixos)
             dados_reais = np.array([
                 # Informações básicas (5 features)
@@ -449,9 +453,6 @@ with tab1:
             st.write(f"🔄 Reais - Probabilidades: {probabilidades_reais[0]}")
             
             # Criar array de dados (39 features exatas)
-            sintomas = [febre, apatia, perda_peso, vomito, diarreia, tosse, letargia, feridas_cutaneas, poliuria, polidipsia]
-            sintomas_values = [1 if s else 0 for s in sintomas]
-            
             st.write(f"Sintomas: {sintomas_values}")
             
             dados_predicao = np.array([
