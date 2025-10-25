@@ -340,17 +340,22 @@ with tab1:
     # Botão de predição
     if st.button("🔍 Realizar Predição", type="primary"):
         try:
-            # Criar array de dados com novos campos
+            # Criar array de dados (39 features exatas)
             sintomas = [febre, apatia, perda_peso, vomito, diarreia, tosse, letargia, feridas_cutaneas, poliuria, polidipsia]
             sintomas_values = [1 if s else 0 for s in sintomas]
             
             dados_predicao = np.array([
+                # Informações básicas (5 features)
                 especie == "Canina", especie == "Felina", idade_anos, peso_kg, sexo == "M",
-                hemoglobina, hematocrito, leucocitos, glicose,
-                ureia, creatinina, proteinas_totais, albumina, eosinofilos,
-                25.0, 50.0, 100.0, 7.0, 3.5, 200.0, 100.0, 2.0,
-                1.0, 1.5, 2.0
-            ] + sintomas_values + [0, 0, 0, 0, 0, 0, 0]).reshape(1, -1)
+                # Exames laboratoriais principais (9 features)
+                hemoglobina, hematocrito, leucocitos, glicose, ureia, creatinina, proteinas_totais, albumina, eosinofilos,
+                # Valores fixos para outros exames (10 features)
+                25.0, 50.0, 100.0, 7.0, 3.5, 200.0, 100.0, 2.0, 1.0, 1.5,
+                # Sintomas (10 features)
+            ] + sintomas_values + [
+                # Features extras para completar 39 (5 features)
+                0, 0, 0, 0, 0
+            ]).reshape(1, -1)
             
             # Fazer predição
             predicao = modelo.predict(dados_predicao)
