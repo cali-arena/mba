@@ -387,6 +387,36 @@ with tab1:
             st.write(f"Exames: Hb={hemoglobina}, Ht={hematocrito}, Leu={leucocitos}, Glu={glicose}")
             st.write(f"Ureia={ureia}, Creat={creatinina}, PT={proteinas_totais}, Alb={albumina}, Eos={eosinofilos}")
             
+            # Teste: alterar alguns valores para ver se o resultado muda
+            st.write("🧪 Teste - Alterando valores para verificar se o modelo responde:")
+            
+            # Criar dados de teste com valores bem diferentes
+            dados_teste = np.array([
+                # Informações básicas (5 features) - valores diferentes
+                0, 1, 15.0, 25.0, 0,  # Felina, 15 anos, 25kg, Fêmea
+                # Exames laboratoriais principais (9 features) - valores alterados
+                8.0, 30.0, 15.0, 150.0, 50.0, 2.0, 8.0, 4.0, 5.0,
+                # Valores fixos para outros exames (10 features)
+                25.0, 50.0, 100.0, 7.0, 3.5, 200.0, 100.0, 2.0, 1.0, 1.5,
+                # Sintomas (10 features) - todos diferentes
+                1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                # Features extras para completar 39 (5 features)
+                0, 0, 0, 0, 0
+            ]).reshape(1, -1)
+            
+            # Aplicar scaler se disponível
+            if scaler is not None:
+                dados_teste_scaled = scaler.transform(dados_teste)
+            else:
+                dados_teste_scaled = dados_teste
+            
+            # Fazer predição de teste
+            predicao_teste = modelo.predict(dados_teste_scaled)
+            probabilidades_teste = modelo.predict_proba(dados_teste_scaled)
+            
+            st.write(f"🧪 Teste - Predição: {predicao_teste}")
+            st.write(f"🧪 Teste - Probabilidades: {probabilidades_teste[0]}")
+            
             # Criar array de dados (39 features exatas)
             sintomas = [febre, apatia, perda_peso, vomito, diarreia, tosse, letargia, feridas_cutaneas, poliuria, polidipsia]
             sintomas_values = [1 if s else 0 for s in sintomas]
