@@ -13,8 +13,6 @@ from sklearn.cluster import KMeans
 import warnings
 warnings.filterwarnings('ignore')
 
-# VERSÃO CORRIGIDA - SEM SCATTER PLOT PROBLEMÁTICO
-
 # Configuração da página
 st.set_page_config(
     page_title="🧪 Laboratório & Sintomas (EDA)",
