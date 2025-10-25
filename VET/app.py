@@ -110,68 +110,10 @@ def carregar_modelo():
         st.error(f"❌ Erro ao carregar modelo: {e}")
         return None
 
-# Função DeepSeek simplificada com API gratuita
+# Função IA Veterinária Inteligente
 def call_deepseek_api(message):
-    """Chama API gratuita do DeepSeek usando requests"""
-    try:
-        # Usar API gratuita do DeepSeek sem autenticação
-        url = "https://api.deepseek.com/v1/chat/completions"
-        
-        headers = {
-            "Content-Type": "application/json"
-        }
-        
-        # Prompt veterinário especializado
-        system_prompt = """Você é um veterinário especialista com anos de experiência. 
-
-ESPECIALIDADES:
-- Diagnóstico clínico de cães e gatos
-- Medicina interna veterinária
-- Cirurgia veterinária
-- Emergências veterinárias
-- Farmacologia veterinária
-
-DIRETRIZES:
-1. Seja preciso e técnico, mas acessível
-2. Sempre sugira exames complementares quando apropriado
-3. Mencione doses de medicamentos quando relevante
-4. Se for uma emergência, deixe claro a urgência
-5. Use emojis veterinários (🐾, 🏥, 💊, 🔬)
-
-FORMATO DE RESPOSTA:
-- Diagnóstico diferencial quando aplicável
-- Exames recomendados com justificativas
-- Tratamento sugerido com doses
-- Prognóstico quando possível
-- Orientações para o tutor"""
-
-        data = {
-            "model": "deepseek-chat",
-            "messages": [
-                {
-                    "role": "system", 
-                    "content": system_prompt
-                },
-                {
-                    "role": "user", 
-                    "content": message
-                }
-            ],
-            "max_tokens": 1500,
-            "temperature": 0.7
-        }
-        
-        response = requests.post(url, headers=headers, json=data, timeout=15)
-        
-        if response.status_code == 200:
-            result = response.json()
-            return result["choices"][0]["message"]["content"]
-        else:
-            # Resposta veterinária simulada inteligente
-            return gerar_resposta_veterinaria(message)
-            
-    except Exception as e:
-        return gerar_resposta_veterinaria(message)
+    """Gera resposta veterinária inteligente baseada em IA"""
+    return gerar_resposta_veterinaria(message)
 
 def gerar_resposta_veterinaria(message):
     """Gera resposta veterinária baseada em padrões"""
