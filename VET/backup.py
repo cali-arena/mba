@@ -21,8 +21,15 @@ from sklearn.metrics import accuracy_score, classification_report, confusion_mat
 from sklearn.pipeline import Pipeline
 from sklearn.feature_selection import SelectKBest, f_classif, RFE
 from sklearn.decomposition import PCA
-import plotly.express as px
-import plotly.graph_objects as go
+try:
+    import plotly.express as px
+    import plotly.graph_objects as go
+    PLOTLY_AVAILABLE = True
+except ImportError:
+    PLOTLY_AVAILABLE = False
+    # Fallback para matplotlib se plotly não estiver disponível
+    import matplotlib.pyplot as plt
+    import seaborn as sns
 
 # Configuração da página
 st.set_page_config(
@@ -246,9 +253,16 @@ if pagina == "🏠 Visão Geral":
         col1, col2 = st.columns([2, 1])
         
         with col1:
-            fig = px.pie(values=especie_counts.values, names=especie_counts.index, 
-                        title="Distribuição por Espécie")
-            st.plotly_chart(fig, use_container_width=True)
+            if PLOTLY_AVAILABLE:
+                fig = px.pie(values=especie_counts.values, names=especie_counts.index, 
+                            title="Distribuição por Espécie")
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                # Fallback com matplotlib
+                fig, ax = plt.subplots()
+                ax.pie(especie_counts.values, labels=especie_counts.index, autopct='%1.1f%%')
+                ax.set_title("Distribuição por Espécie")
+                st.pyplot(fig)
         
         with col2:
             st.dataframe(especie_counts.reset_index().rename(columns={'index': 'Espécie', 'especie': 'Quantidade'}))
@@ -258,11 +272,19 @@ if pagina == "🏠 Visão Geral":
         st.subheader("🏥 Distribuição de Diagnósticos")
         diag_counts = df['diagnostico'].value_counts().head(10)
         
-        fig = px.bar(x=diag_counts.values, y=diag_counts.index, 
-                    title="Top 10 Diagnósticos",
-                    orientation='h')
-        fig.update_layout(yaxis={'categoryorder': 'total ascending'})
-        st.plotly_chart(fig, use_container_width=True)
+        if PLOTLY_AVAILABLE:
+            fig = px.bar(x=diag_counts.values, y=diag_counts.index, 
+                        title="Top 10 Diagnósticos",
+                        orientation='h')
+            fig.update_layout(yaxis={'categoryorder': 'total ascending'})
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            # Fallback com matplotlib
+            fig, ax = plt.subplots(figsize=(10, 6))
+            ax.barh(diag_counts.index, diag_counts.values)
+            ax.set_title("Top 10 Diagnósticos")
+            ax.set_xlabel("Quantidade")
+            st.pyplot(fig)
 
 elif pagina == "📊 Análise de Dados":
     st.header("📊 Análise Detalhada dos Dados")
@@ -315,8 +337,17 @@ elif pagina == "📊 Análise de Dados":
         # Distribuição de idade
         if 'idade_anos' in df_filtrado.columns:
             st.subheader("📈 Distribuição de Idade")
-            fig = px.histogram(df_filtrado, x='idade_anos', nbins=20, title="Distribuição de Idade")
-            st.plotly_chart(fig, use_container_width=True)
+            if PLOTLY_AVAILABLE:
+                fig = px.histogram(df_filtrado, x='idade_anos', nbins=20, title="Distribuição de Idade")
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                # Fallback com matplotlib
+                fig, ax = plt.subplots(figsize=(10, 6))
+                ax.hist(df_filtrado['idade_anos'], bins=20, alpha=0.7)
+                ax.set_title("Distribuição de Idade")
+                ax.set_xlabel("Idade (anos)")
+                ax.set_ylabel("Frequência")
+                st.pyplot(fig)
         
         # Correlações entre variáveis numéricas
         numeric_cols = df_filtrado.select_dtypes(include=[np.number]).columns
@@ -324,11 +355,18 @@ elif pagina == "📊 Análise de Dados":
             st.subheader("🔗 Matriz de Correlação")
             corr_matrix = df_filtrado[numeric_cols].corr()
             
-            fig = px.imshow(corr_matrix, 
-                           text_auto=True, 
-                           aspect="auto",
-                           title="Matriz de Correlação")
-            st.plotly_chart(fig, use_container_width=True)
+            if PLOTLY_AVAILABLE:
+                fig = px.imshow(corr_matrix, 
+                               text_auto=True, 
+                               aspect="auto",
+                               title="Matriz de Correlação")
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                # Fallback com matplotlib
+                fig, ax = plt.subplots(figsize=(12, 8))
+                sns.heatmap(corr_matrix, annot=True, cmap='coolwarm', center=0, ax=ax)
+                ax.set_title("Matriz de Correlação")
+                st.pyplot(fig)
         
         # Tabela de dados
         st.subheader("📋 Dados Filtrados")
@@ -667,17 +705,25 @@ elif pagina == "🤖 Treinar Modelo":
                 # Top 15 features mais importantes
                 top_features = feature_importance.head(15)
                 
-                fig = px.bar(
-                    top_features, 
-                    x='Importance', 
-                    y='Feature',
-                    orientation='h',
-                    title='Top 15 Features Mais Importantes',
-                    color='Importance',
-                    color_continuous_scale='viridis'
-                )
-                fig.update_layout(height=600)
-                st.plotly_chart(fig, use_container_width=True)
+                if PLOTLY_AVAILABLE:
+                    fig = px.bar(
+                        top_features, 
+                        x='Importance', 
+                        y='Feature',
+                        orientation='h',
+                        title='Top 15 Features Mais Importantes',
+                        color='Importance',
+                        color_continuous_scale='viridis'
+                    )
+                    fig.update_layout(height=600)
+                    st.plotly_chart(fig, use_container_width=True)
+                else:
+                    # Fallback com matplotlib
+                    fig, ax = plt.subplots(figsize=(10, 8))
+                    ax.barh(top_features['Feature'], top_features['Importance'])
+                    ax.set_title('Top 15 Features Mais Importantes')
+                    ax.set_xlabel('Importância')
+                    st.pyplot(fig)
                 
                 # Tabela de importância
                 st.dataframe(top_features, use_container_width=True)
@@ -688,14 +734,23 @@ elif pagina == "🤖 Treinar Modelo":
             from sklearn.metrics import confusion_matrix
             cm = confusion_matrix(y_test, y_pred)
             
-            fig = px.imshow(
-                cm, 
-                text_auto=True, 
-                aspect="auto",
-                title="Matriz de Confusão - Gradient Boosting",
-                labels=dict(x="Predito", y="Real", color="Quantidade")
-            )
-            st.plotly_chart(fig, use_container_width=True)
+            if PLOTLY_AVAILABLE:
+                fig = px.imshow(
+                    cm, 
+                    text_auto=True, 
+                    aspect="auto",
+                    title="Matriz de Confusão - Gradient Boosting",
+                    labels=dict(x="Predito", y="Real", color="Quantidade")
+                )
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                # Fallback com matplotlib
+                fig, ax = plt.subplots(figsize=(8, 6))
+                sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', ax=ax)
+                ax.set_title("Matriz de Confusão - Gradient Boosting")
+                ax.set_xlabel("Predito")
+                ax.set_ylabel("Real")
+                st.pyplot(fig)
             
             # Classification Report
             st.subheader("📊 Relatório de Classificação")
@@ -851,13 +906,30 @@ elif pagina == "📈 Estatísticas":
 
         with col1:
             # Histograma
-            fig = px.histogram(df, x=var_analise, nbins=30, title=f"Distribuição de {var_analise}")
-            st.plotly_chart(fig, use_container_width=True)
+            if PLOTLY_AVAILABLE:
+                fig = px.histogram(df, x=var_analise, nbins=30, title=f"Distribuição de {var_analise}")
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                # Fallback com matplotlib
+                fig, ax = plt.subplots(figsize=(8, 6))
+                ax.hist(df[var_analise], bins=30, alpha=0.7)
+                ax.set_title(f"Distribuição de {var_analise}")
+                ax.set_xlabel(var_analise)
+                ax.set_ylabel("Frequência")
+                st.pyplot(fig)
         
         with col2:
             # Box plot
-            fig = px.box(df, y=var_analise, title=f"Box Plot de {var_analise}")
-            st.plotly_chart(fig, use_container_width=True)
+            if PLOTLY_AVAILABLE:
+                fig = px.box(df, y=var_analise, title=f"Box Plot de {var_analise}")
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                # Fallback com matplotlib
+                fig, ax = plt.subplots(figsize=(8, 6))
+                ax.boxplot(df[var_analise])
+                ax.set_title(f"Box Plot de {var_analise}")
+                ax.set_ylabel(var_analise)
+                st.pyplot(fig)
     
     # Análise por diagnóstico
     if 'diagnostico' in df.columns and len(numeric_cols) > 0:
