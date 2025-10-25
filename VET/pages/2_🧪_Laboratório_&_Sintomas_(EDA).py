@@ -410,15 +410,26 @@ elif analise_tipo == "Correlações":
     with col2:
         var_y = st.selectbox("Variável Y:", [c for c in colunas_relevantes if c != var_x])
     
-    fig_scatter = px.scatter(
-        df,
-        x=var_x,
-        y=var_y,
-        color='diagnostico' if 'diagnostico' in df.columns else None,
-        title=f'Relação entre {var_x.replace("_", " ").title()} e {var_y.replace("_", " ").title()}',
-        trendline="ols",
-        opacity=0.6
-    )
+    try:
+        fig_scatter = px.scatter(
+            df,
+            x=var_x,
+            y=var_y,
+            color='diagnostico' if 'diagnostico' in df.columns else None,
+            title=f'Relação entre {var_x.replace("_", " ").title()} e {var_y.replace("_", " ").title()}',
+            trendline="ols",
+            opacity=0.6
+        )
+    except ImportError:
+        # Fallback sem trendline se statsmodels não estiver disponível
+        fig_scatter = px.scatter(
+            df,
+            x=var_x,
+            y=var_y,
+            color='diagnostico' if 'diagnostico' in df.columns else None,
+            title=f'Relação entre {var_x.replace("_", " ").title()} e {var_y.replace("_", " ").title()}',
+            opacity=0.6
+        )
     fig_scatter.update_layout(height=500)
     
     st.plotly_chart(fig_scatter, use_container_width=True)
@@ -521,4 +532,6 @@ st.markdown("""
     <p>💡 Use os filtros na barra lateral para análises mais específicas</p>
 </div>
 """, unsafe_allow_html=True)
+
+
 
