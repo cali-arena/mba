@@ -340,6 +340,13 @@ with tab1:
     # Botão de predição
     if st.button("🔍 Realizar Predição", type="primary"):
         try:
+            # Debug: mostrar dados de entrada
+            st.write("🔍 Debug - Dados de entrada:")
+            st.write(f"Espécie: {especie}, Idade: {idade_anos}, Peso: {peso_kg}, Sexo: {sexo}")
+            st.write(f"Exames: Hb={hemoglobina}, Ht={hematocrito}, Leu={leucocitos}, Glu={glicose}")
+            st.write(f"Ureia={ureia}, Creat={creatinina}, PT={proteinas_totais}, Alb={albumina}, Eos={eosinofilos}")
+            st.write(f"Sintomas: {sintomas_values}")
+            
             # Criar array de dados (39 features exatas)
             sintomas = [febre, apatia, perda_peso, vomito, diarreia, tosse, letargia, feridas_cutaneas, poliuria, polidipsia]
             sintomas_values = [1 if s else 0 for s in sintomas]
@@ -357,9 +364,16 @@ with tab1:
                 0, 0, 0, 0, 0
             ]).reshape(1, -1)
             
+            # Debug: mostrar array final
+            st.write(f"🔍 Array de dados ({dados_predicao.shape[1]} features): {dados_predicao[0]}")
+            
             # Fazer predição
             predicao = modelo.predict(dados_predicao)
             probabilidades = modelo.predict_proba(dados_predicao)
+            
+            # Debug: mostrar predição bruta
+            st.write(f"🔍 Predição bruta: {predicao}")
+            st.write(f"🔍 Probabilidades: {probabilidades[0]}")
             
             # Obter diagnóstico
             diagnostico_predito = le_diagnostico.inverse_transform(predicao)[0]
