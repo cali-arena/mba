@@ -386,11 +386,12 @@ with tab1:
             st.write(f"Espécie: {especie}, Idade: {idade_anos}, Peso: {peso_kg}, Sexo: {sexo}")
             st.write(f"Exames: Hb={hemoglobina}, Ht={hematocrito}, Leu={leucocitos}, Glu={glicose}")
             st.write(f"Ureia={ureia}, Creat={creatinina}, PT={proteinas_totais}, Alb={albumina}, Eos={eosinofilos}")
-            st.write(f"Sintomas: {sintomas_values}")
             
             # Criar array de dados (39 features exatas)
             sintomas = [febre, apatia, perda_peso, vomito, diarreia, tosse, letargia, feridas_cutaneas, poliuria, polidipsia]
             sintomas_values = [1 if s else 0 for s in sintomas]
+            
+            st.write(f"Sintomas: {sintomas_values}")
             
             dados_predicao = np.array([
                 # Informações básicas (5 features)
