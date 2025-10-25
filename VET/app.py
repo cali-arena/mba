@@ -305,6 +305,7 @@ with tab1:
         st.markdown("**🐕 Informações Básicas**")
         especie = st.selectbox("Espécie:", ["Canina", "Felina"])
         idade_anos = st.number_input("Idade (anos):", 0.0, 20.0, 5.0)
+        peso_kg = st.number_input("Peso (kg):", 0.5, 100.0, 15.0)
         sexo = st.selectbox("Sexo:", ["M", "F"])
         st.markdown('</div>', unsafe_allow_html=True)
         
@@ -314,6 +315,11 @@ with tab1:
         hematocrito = st.number_input("Hematócrito (%):", 20.0, 60.0, 45.0)
         leucocitos = st.number_input("Leucócitos (mil/μL):", 3.0, 25.0, 8.0)
         glicose = st.number_input("Glicose (mg/dL):", 50.0, 300.0, 100.0)
+        ureia = st.number_input("Ureia (mg/dL):", 10.0, 200.0, 35.0)
+        creatinina = st.number_input("Creatinina (mg/dL):", 0.5, 10.0, 1.2)
+        proteinas_totais = st.number_input("Proteínas Totais (g/dL):", 3.0, 10.0, 6.5)
+        albumina = st.number_input("Albumina (g/dL):", 1.0, 5.0, 3.2)
+        eosinofilos = st.number_input("Eosinófilos (%):", 0.0, 20.0, 2.0)
         st.markdown('</div>', unsafe_allow_html=True)
     
     with col2:
@@ -334,15 +340,15 @@ with tab1:
     # Botão de predição
     if st.button("🔍 Realizar Predição", type="primary"):
         try:
-            # Criar array de dados (39 features)
+            # Criar array de dados com novos campos
             sintomas = [febre, apatia, perda_peso, vomito, diarreia, tosse, letargia, feridas_cutaneas, poliuria, polidipsia]
             sintomas_values = [1 if s else 0 for s in sintomas]
             
             dados_predicao = np.array([
-                especie == "Canina", especie == "Felina", idade_anos, sexo == "M",
-                hemoglobina, hematocrito, leucocitos, 10.0,
-                glicose, 30.0, 1.2, 25.0, 50.0,
-                100.0, 7.0, 3.5, 200.0, 100.0, 2.0,
+                especie == "Canina", especie == "Felina", idade_anos, peso_kg, sexo == "M",
+                hemoglobina, hematocrito, leucocitos, glicose,
+                ureia, creatinina, proteinas_totais, albumina, eosinofilos,
+                25.0, 50.0, 100.0, 7.0, 3.5, 200.0, 100.0, 2.0,
                 1.0, 1.5, 2.0
             ] + sintomas_values + [0, 0, 0, 0, 0, 0, 0]).reshape(1, -1)
             
