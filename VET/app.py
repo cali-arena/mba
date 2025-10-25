@@ -110,85 +110,49 @@ def carregar_modelo():
         st.error(f"❌ Erro ao carregar modelo: {e}")
         return None
 
-# Função DeepSeek API Real
+# Função IA Veterinária Gratuita Integrada
 def call_deepseek_api(message):
-    """Chama API real do DeepSeek para respostas veterinárias naturais"""
+    """Usa IA veterinária gratuita integrada para respostas naturais"""
     try:
-        import os
+        # Usar API gratuita do Hugging Face sem autenticação
         import requests
         
-        # API Key do DeepSeek (você pode configurar via variável de ambiente)
-        api_key = os.getenv("DEEPSEEK_API_KEY", "sk-1234567890abcdef")  # Substitua por sua API key real
-        
-        # Se não tiver API key válida, usar resposta inteligente local
-        if api_key == "sk-1234567890abcdef":
-            return gerar_resposta_veterinaria_avancada(message)
-        
-        headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json"
-        }
-        
         # Prompt veterinário especializado
-        system_prompt = """Você é um veterinário especialista com anos de experiência em medicina veterinária. 
+        prompt = f"""Você é um veterinário especialista. Responda em português brasileiro de forma natural e técnica.
 
-ESPECIALIDADES:
-- Diagnóstico clínico de cães e gatos
-- Medicina interna veterinária
-- Cirurgia veterinária
-- Emergências veterinárias
-- Farmacologia veterinária
-- Nutrição veterinária
+Pergunta: {message}
 
-DIRETRIZES:
-1. Seja preciso, técnico mas acessível
-2. Sempre sugira exames complementares quando apropriado
-3. Mencione doses específicas de medicamentos quando relevante
-4. Se for emergência, deixe claro a urgência
-5. Use emojis veterinários (🐾, 🏥, 💊, 🔬, ⚕️)
-6. Responda em português brasileiro
-7. Sempre mencione que é importante consultar veterinário para diagnóstico definitivo
+Resposta veterinária:"""
 
-FORMATO DE RESPOSTA:
-- Diagnóstico diferencial quando aplicável
-- Exames recomendados com justificativas
-- Tratamento sugerido com doses específicas
-- Prognóstico quando possível
-- Orientações práticas para o tutor
-- Sinais de alerta para emergência
-
-Seja natural, conversacional e útil. Forneça informações práticas que realmente ajudem."""
-
+        # Usar modelo gratuito do Hugging Face
         data = {
-            "model": "deepseek-chat",
-            "messages": [
-                {
-                    "role": "system", 
-                    "content": system_prompt
-                },
-                {
-                    "role": "user", 
-                    "content": message
-                }
-            ],
-            "max_tokens": 1500,
-            "temperature": 0.7,
-            "stream": False
+            "inputs": prompt,
+            "parameters": {
+                "max_new_tokens": 800,
+                "temperature": 0.7,
+                "do_sample": True,
+                "top_p": 0.9
+            }
         }
         
+        # Tentar modelo gratuito do Hugging Face
         response = requests.post(
-            "https://api.deepseek.com/v1/chat/completions", 
-            headers=headers, 
-            json=data, 
-            timeout=15
+            "https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium",
+            json=data,
+            timeout=8
         )
         
         if response.status_code == 200:
             result = response.json()
-            return result["choices"][0]["message"]["content"]
-        else:
-            # Fallback para resposta inteligente local
-            return gerar_resposta_veterinaria_avancada(message)
+            if isinstance(result, list) and len(result) > 0:
+                generated_text = result[0].get("generated_text", "")
+                # Extrair apenas a resposta
+                if "Resposta veterinária:" in generated_text:
+                    return generated_text.split("Resposta veterinária:")[-1].strip()
+                return generated_text
+        
+        # Fallback para resposta inteligente local
+        return gerar_resposta_veterinaria_avancada(message)
             
     except Exception as e:
         # Fallback para resposta inteligente local
@@ -677,23 +641,6 @@ with tab1:
 # ABA 2: CHAT IA
 with tab2:
     st.subheader("💬 Chat com IA Veterinária")
-    
-    # Configuração de API Key (opcional)
-    with st.expander("⚙️ Configurações Avançadas"):
-        st.info("💡 Para respostas ainda mais naturais, configure sua API key do DeepSeek")
-        api_key_input = st.text_input(
-            "DeepSeek API Key (opcional):", 
-            type="password",
-            placeholder="sk-...",
-            help="Deixe vazio para usar IA veterinária local inteligente"
-        )
-        
-        if api_key_input:
-            import os
-            os.environ["DEEPSEEK_API_KEY"] = api_key_input
-            st.success("✅ API Key configurada! Usando DeepSeek API.")
-        else:
-            st.info("🤖 Usando IA veterinária local inteligente.")
     
     # Inicializar chat
     if "chat_history" not in st.session_state:
