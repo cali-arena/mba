@@ -491,7 +491,8 @@ with tab1:
                     """)
                 st.markdown('</div>', unsafe_allow_html=True)
                 
-                return  # Parar aqui se há valores críticos
+                # Parar execução se há valores críticos
+                st.stop()
             
             # Se não há valores críticos, usar modelo ML
             st.info("✅ Valores dentro dos parâmetros normais - Usando modelo de IA")
