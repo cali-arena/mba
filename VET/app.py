@@ -89,7 +89,13 @@ def carregar_modelo():
         
         for path in possible_paths:
             if Path(path).exists():
-                return joblib.load(path)
+                model_data = joblib.load(path)
+                # Verificar se é um dicionário com modelo e scaler
+                if isinstance(model_data, dict):
+                    return model_data
+                else:
+                    # Se é apenas o modelo, retornar como dicionário
+                    return {'model': model_data, 'scaler': None}
         
         st.error("❌ Modelo não encontrado!")
         return None
@@ -367,9 +373,17 @@ with tab1:
             # Debug: mostrar array final
             st.write(f"🔍 Array de dados ({dados_predicao.shape[1]} features): {dados_predicao[0]}")
             
+            # Aplicar scaler se disponível
+            if scaler is not None:
+                dados_predicao_scaled = scaler.transform(dados_predicao)
+                st.write(f"🔍 Dados após scaler: {dados_predicao_scaled[0]}")
+            else:
+                dados_predicao_scaled = dados_predicao
+                st.write("🔍 Scaler não disponível, usando dados originais")
+            
             # Fazer predição
-            predicao = modelo.predict(dados_predicao)
-            probabilidades = modelo.predict_proba(dados_predicao)
+            predicao = modelo.predict(dados_predicao_scaled)
+            probabilidades = modelo.predict_proba(dados_predicao_scaled)
             
             # Debug: mostrar predição bruta
             st.write(f"🔍 Predição bruta: {predicao}")
