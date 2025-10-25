@@ -236,3 +236,5 @@ def gerar_hipoteses_clinicas_melhoradas(sintomas: Dict, exames: Dict, especie: s
     hipoteses.sort(key=lambda x: (x['prioridade'], x['score']), reverse=True)
     
     return hipoteses[:5]  # Top 5 hipóteses
+
+

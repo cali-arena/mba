@@ -1,226 +1,228 @@
-# 🐾 VetDiagnosisAI
+# 🐾 DIAGVET IA - Sistema Inteligente de Diagnóstico Veterinário
 
-**Sistema Inteligente de Apoio ao Diagnóstico Veterinário**
+[![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](https://streamlit.io/)
+[![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org/)
+[![Scikit-Learn](https://img.shields.io/badge/scikit--learn-F7931E?style=for-the-badge&logo=scikit-learn&logoColor=white)](https://scikit-learn.org/)
+[![Pandas](https://img.shields.io/badge/Pandas-150458?style=for-the-badge&logo=pandas&logoColor=white)](https://pandas.pydata.org/)
 
-Aplicação web completa em Python/Streamlit para análise de exames laboratoriais e sintomas de pets (cães, gatos), com predição de diagnósticos usando Machine Learning.
+## 📋 Visão Geral
 
----
+O **DIAGVET IA** é um sistema completo de diagnóstico veterinário baseado em inteligência artificial, desenvolvido com Streamlit para análise de dados clínicos, laboratoriais e predição de diagnósticos em animais. O sistema oferece uma interface intuitiva para veterinários analisarem dados de pacientes e obterem insights baseados em machine learning.
 
-## 📋 Funcionalidades
+## 🚀 Aplicações Disponíveis
 
-### 📊 Visão Geral
-- Cards com métricas principais (total de casos, distribuição de espécies, top diagnósticos)
-- Taxa de positividade por doença
-- Alertas de valores críticos em exames
-- Gráficos temporais (quando há datas)
+### 🔧 Aplicação Principal
+- **Arquivo:** `app.py`
+- **URL Local:** http://localhost:8501
+- **Descrição:** Interface principal com todas as funcionalidades completas
 
-### 🧪 Laboratório & Sintomas (EDA)
-- Análise exploratória interativa com boxplots, histogramas, scatter plots
-- Heatmap de correlação entre variáveis
-- Filtros por espécie, raça, sexo, faixa etária e diagnóstico
-- Destaque de outliers e valores fora da faixa de referência
+### 💾 Aplicação Backup
+- **Arquivo:** `app_backup.py` / `backup.py`
+- **URL Local:** http://localhost:8598
+- **URL Rede:** http://192.168.0.22:8598
+- **URL Externa:** http://181.222.101.75:8598
+- **Descrição:** Versão de backup com funcionalidades essenciais
 
-### 🤖 Treinar Modelo
-- Pipeline completo de ML com pré-processamento automático
-- Seleção de features por importância mútua
-- Balanceamento de classes (class_weight='balanced')
-- Grid search de hiperparâmetros
-- Avaliação com ROC AUC, F1, Precision, Recall
-- Matriz de confusão estratificada por espécie
-- Salvamento automático de modelo e preprocessadores
+### 📱 Aplicação Simples
+- **Arquivo:** `app_simples_vet.py`
+- **Descrição:** Versão simplificada focada em predições rápidas
 
-### 🔍 Predição
-- Formulário para entrada manual de sintomas e exames
-- Upload de arquivo CSV/XLSX para predição em lote
-- Top-N diagnósticos prováveis com probabilidades
-- Explicabilidade com SHAP (features mais influentes)
-- Alertas automáticos para valores fora de referência
+## 🛠️ Instalação e Execução
 
-### 📥 Upload de Dados
-- Suporte a CSV e XLSX (múltiplas abas)
-- Mapeamento interativo de colunas
-- Validação de schema
-- Merge entre múltiplos arquivos
-
-### 🧠 Insights & Regras
-- Geração automática de insights clínicos
-- Hipóteses baseadas em correlações
-- Sugestões de próximos passos diagnósticos
-- **⚠️ Disclaimers claros: ferramenta educacional, não substitui julgamento clínico**
-
----
-
-## 🚀 Como Executar
-
-### 1. Instalação
+### Pré-requisitos
 ```bash
-# Clone ou baixe o projeto
-cd VET
-
-# Instale as dependências
+Python 3.8+
 pip install -r requirements.txt
 ```
 
-### 2. Execução
+### Executar Aplicação Principal
 ```bash
+cd VET
+python -m streamlit run app.py
+```
+
+### Executar Aplicação Backup
+```bash
+cd VET
+python -m streamlit run app_backup.py --server.port 8505
+```
+
+### Executar Aplicação Simples
+```bash
+cd VET
+python -m streamlit run app_simples_vet.py --server.port 8506
+```
+
+## 📊 Funcionalidades
+
+### 🏠 **Visão Geral**
+- Dashboard com estatísticas gerais
+- Distribuição de idade e gênero dos pacientes
+- Raças mais comuns (caninos e felinos)
+- Métricas de resumo dos dados
+
+### 🧪 **Laboratório & Sintomas (EDA)**
+- Análise exploratória de dados
+- Visualizações interativas
+- Correlações entre variáveis
+- Distribuições estatísticas
+
+### 🤖 **Treinar Modelo**
+- Treinamento de modelos de Machine Learning
+- Validação cruzada
+- Métricas de performance
+- Comparação de algoritmos
+
+### 🔍 **Predição**
+- Sistema de predição de diagnósticos
+- Interface intuitiva para entrada de dados
+- Probabilidades de diagnóstico
+- Explicabilidade dos resultados
+
+### 📥 **Upload de Dados**
+- Importação de dados veterinários
+- Suporte a múltiplos formatos (CSV, Excel)
+- Validação de dados
+- Pré-processamento automático
+
+### 🧠 **Insights & Regras**
+- Regras clínicas implementadas
+- Insights baseados em dados
+- Recomendações de tratamento
+- Sistema de medicamentos
+
+## 📁 Estrutura do Projeto
+
+```
+VET/
+├── 📱 Aplicações
+│   ├── app.py                 # Aplicação principal
+│   ├── app_backup.py          # Aplicação backup
+│   ├── app_simples_vet.py     # Aplicação simplificada
+│   └── backup.py              # Versão alternativa
+├── 📄 Páginas
+│   ├── pages/
+│   │   ├── 1_📊_Visão_Geral.py
+│   │   ├── 2_🧪_Laboratório_&_Sintomas_(EDA).py
+│   │   ├── 3_🤖_Treinar_Modelo.py
+│   │   ├── 4_🔍_Predição.py
+│   │   ├── 5_📥_Upload_de_Dados.py
+│   │   └── 6_🧠_Insights_&_Regras.py
+├── 📊 Dados
+│   ├── data/
+│   │   ├── clinical_veterinary_data.csv
+│   │   ├── laboratory_complete_panel.csv
+│   │   ├── veterinary_complete_real_dataset.csv
+│   │   └── veterinary_master_dataset.csv
+├── 🤖 Modelos
+│   ├── models/
+│   │   ├── gb_model_optimized.pkl
+│   │   ├── model_minimal.pkl
+│   │   └── model_info_781.txt
+├── 📚 Biblioteca
+│   ├── vetlib/
+│   │   ├── __init__.py
+│   │   ├── modeling.py
+│   │   ├── preprocessing.py
+│   │   ├── medications.py
+│   │   ├── clinical_rules.py
+│   │   └── insights.py
+└── 📋 Configuração
+    ├── requirements.txt
+    ├── README.md
+    └── DEPLOY.md
+```
+
+## 🔧 Tecnologias Utilizadas
+
+- **🐍 Python 3.8+** - Linguagem principal
+- **📊 Streamlit** - Interface web interativa
+- **🐼 Pandas** - Manipulação e análise de dados
+- **🔢 NumPy** - Computação numérica
+- **🤖 Scikit-learn** - Machine Learning
+- **📈 Plotly** - Visualizações interativas
+- **📊 Matplotlib/Seaborn** - Gráficos estáticos
+- **📄 OpenPyXL** - Manipulação de arquivos Excel
+- **🖼️ Pillow** - Processamento de imagens
+
+## 📊 Datasets Incluídos
+
+- **Dados Clínicos Veterinários** - Informações de consultas e diagnósticos
+- **Painel Laboratorial Completo** - Resultados de exames laboratoriais
+- **Dataset Realista** - Dados sintéticos baseados em casos reais
+- **Dataset Mestre** - Consolidação de todas as fontes de dados
+
+## 🚀 Deploy
+
+### Deploy Local
+```bash
+# Instalar dependências
+pip install -r requirements.txt
+
+# Executar aplicação
 streamlit run app.py
 ```
 
-O aplicativo abrirá automaticamente em `http://localhost:8501`
+### Deploy em Produção
+Consulte o arquivo `DEPLOY.md` para instruções detalhadas de deploy em produção.
 
----
+## 📝 Status do Sistema
 
-## 📂 Estrutura do Projeto
+✅ **Aplicação Backup:** Funcionando em http://localhost:8598  
+✅ **Dependências:** Todas instaladas e funcionais  
+✅ **Modelos:** Carregados e operacionais  
+✅ **Datasets:** Carregados e validados  
+⚠️ **Avisos:** Alguns warnings sobre `use_container_width` (não críticos)
 
-```
-VetDiagnosisAI/
-├── app.py                                    # Aplicação principal
-├── pages/                                     # Páginas Streamlit
-│   ├── 1_📊_Visão_Geral.py
-│   ├── 2_🧪_Laboratório_&_Sintomas_(EDA).py
-│   ├── 3_🤖_Treinar_Modelo.py
-│   ├── 4_🔍_Predição.py
-│   ├── 5_📥_Upload_de_Dados.py
-│   └── 6_🧠_Insights_&_Regras.py
-├── vetlib/                                    # Biblioteca de funções
-│   ├── data_io.py                            # I/O e validação de dados
-│   ├── preprocessing.py                       # Pré-processamento
-│   ├── modeling.py                            # Modelagem ML
-│   ├── explain.py                             # Explicabilidade (SHAP)
-│   └── insights.py                            # Geração de insights
-├── data/                                      # Datasets
-│   └── exemplo_vet.csv                        # Dataset sintético de exemplo
-├── models/                                    # Modelos treinados (.pkl)
-├── assets/                                    # Recursos visuais
-├── requirements.txt                           # Dependências Python
-└── README.md                                  # Este arquivo
-```
+## 🌐 URLs de Acesso
 
----
+### Local
+- **Principal:** http://localhost:8501
+- **Backup:** http://localhost:8598
+- **Simples:** http://localhost:8506
 
-## 📊 Estrutura de Dados
+### Rede
+- **Backup:** http://192.168.0.22:8598
 
-### Colunas Esperadas
+### Externo
+- **Backup:** http://181.222.101.75:8598
 
-**Identificação:**
-- `id`: ID único do caso
-- `data`: Data do exame (opcional)
-- `especie`: Canina, Felina, Equina
-- `raca`: Raça do animal
-- `idade_anos`: Idade em anos
-- `sexo`: M (Macho) ou F (Fêmea)
+## 📚 Documentação Adicional
 
-**Sintomas (binários 0/1 ou texto):**
-- `febre`, `apatia`, `perda_peso`, `vomito`, `diarreia`
-- `tosse`, `letargia`, `feridas_cutaneas`, `poliuria`, `polidipsia`
+- **[QUICKSTART.md](QUICKSTART.md)** - Guia de início rápido
+- **[DEPLOY.md](DEPLOY.md)** - Instruções de deploy
+- **[PROJETO_COMPLETO.md](PROJETO_COMPLETO.md)** - Documentação completa do projeto
+- **[SISTEMA_MEDICAMENTOS.md](SISTEMA_MEDICAMENTOS.md)** - Sistema de medicamentos
 
-**Exames Laboratoriais (numéricos):**
-- `hemoglobina`, `hematocrito`, `leucocitos`, `plaquetas`
-- `glicose`, `ureia`, `creatinina`
-- `alt`, `ast`, `fosfatase_alcalina`
-- `proteinas_totais`, `albumina`, `colesterol`, `triglicerideos`
+## 🤝 Contribuição
 
-**Alvo:**
-- `diagnostico`: Doença/condição identificada
-
-### Faixas de Referência por Espécie
-
-#### Canina
-- Creatinina: 0.5–1.6 mg/dL
-- Ureia: 20–50 mg/dL
-- Glicose: 70–120 mg/dL
-- Hemoglobina: 12–18 g/dL
-- ALT: 10–100 U/L
-
-#### Felina
-- Creatinina: 0.8–2.0 mg/dL
-- Ureia: 30–60 mg/dL
-- Glicose: 70–150 mg/dL
-- Hemoglobina: 9–15 g/dL
-- ALT: 10–80 U/L
-
----
-
-## 🔗 Datasets Públicos Sugeridos
-
-O aplicativo inclui links para datasets veterinários públicos:
-
-1. **Kaggle – Veterinary Disease Detection**
-   - Sintomas → Diagnóstico
-   - https://www.kaggle.com/datasets/taruntiwarihp/veterinary-disease-detection
-
-2. **UCI – Horse Colic**
-   - Dados de cólica em cavalos (excelente para ML tabular)
-   - https://archive.ics.uci.edu/dataset/46/horse+colic
-
-3. **Kaggle – Animal Blood Samples**
-   - Amostras de sangue de animais (ideal para EDA e faixas normais)
-   - https://www.kaggle.com/datasets/andrewmvd/animal-blood-samples
-
-**⚠️ Importante:** Verifique as licenças e termos de uso de cada dataset.
-
----
-
-## 📖 Guia de Uso
-
-### Upload de Dados
-1. Vá para "📥 Upload de Dados"
-2. Faça upload de arquivo CSV ou XLSX
-3. Mapeie as colunas do seu arquivo para o schema esperado
-4. Valide e salve
-
-### Análise Exploratória
-1. Acesse "🧪 Laboratório & Sintomas (EDA)"
-2. Use os filtros laterais (espécie, raça, diagnóstico)
-3. Explore distribuições e correlações
-4. Identifique valores anormais
-
-### Treinamento
-1. Vá para "🤖 Treinar Modelo"
-2. Selecione o algoritmo (Logistic Regression, Random Forest, LightGBM)
-3. Configure hiperparâmetros (ou use busca em grid)
-4. Treine o modelo e avalie métricas
-5. Salve o modelo treinado
-
-### Predição
-1. Acesse "🔍 Predição"
-2. Preencha o formulário OU faça upload de arquivo
-3. Visualize top diagnósticos prováveis
-4. Analise explicabilidade (SHAP)
-5. Exporte resultados
-
----
-
-## ⚠️ Avisos Legais
-
-**Este software é uma ferramenta educacional e de pesquisa.**
-
-- ❌ **NÃO substitui** o julgamento clínico de um médico veterinário
-- ❌ **NÃO deve ser usado** como única base para decisões terapêuticas
-- ✅ **Deve ser usado** como apoio à decisão clínica por profissionais qualificados
-- ✅ **Ideal para** ensino, pesquisa e análise exploratória de dados
-
-**Sempre consulte um médico veterinário licenciado para diagnóstico e tratamento.**
-
----
-
-## 🛠️ Tecnologias
-
-- **Frontend:** Streamlit
-- **ML:** scikit-learn, LightGBM, XGBoost
-- **Explicabilidade:** SHAP
-- **Visualização:** Plotly, Matplotlib, Seaborn
-- **Data:** Pandas, NumPy, OpenPyXL
-
----
-
-## 📧 Suporte
-
-Para dúvidas ou sugestões, abra uma issue no repositório do projeto.
-
----
+1. Fork o projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
+3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
+4. Push para a branch (`git push origin feature/AmazingFeature`)
+5. Abra um Pull Request
 
 ## 📄 Licença
 
-Este projeto é fornecido "como está" para fins educacionais.
+Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalhes.
 
+## 👥 Autores
+
+- **Lucas** - *Desenvolvimento Principal* - [@cali-arena](https://github.com/cali-arena)
+
+## 🙏 Agradecimentos
+
+- Comunidade Streamlit
+- Scikit-learn team
+- Pandas development team
+- Veterinários que contribuíram com dados e feedback
+
+---
+
+*Sistema desenvolvido para auxiliar veterinários no diagnóstico e análise de dados clínicos de animais, utilizando inteligência artificial para melhorar a precisão e eficiência dos diagnósticos veterinários.*
+
+## 📞 Contato
+
+Para dúvidas ou sugestões, entre em contato através do GitHub Issues ou email.
+
+**⭐ Se este projeto foi útil para você, considere dar uma estrela!**

@@ -275,3 +275,5 @@ class SistemaDiagnosticoHibrido:
 
 # Instância global do sistema
 sistema_hibrido = SistemaDiagnosticoHibrido()
+
+

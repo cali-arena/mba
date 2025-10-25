@@ -1,0 +1,10 @@
+[33m6a8d6bb[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m feat: Modelo mínimo adicionado (44MB) - App pronto para Streamlit Cloud com modelo funcional
+[33m5e77de6[m feat: Configurado Git LFS para modelo - Modelo otimizado pronto para Streamlit Cloud
+[33mb5fcb67[m fix: Correção final - Modelo garantido para carregar no Streamlit Cloud
+[33m1752415[m fix: Correções finais - Sidebar removida com CSS robusto e carregamento do modelo com debug detalhado
+[33mc8951b1[m feat: App pronto para Streamlit Cloud - Modelo incluído e carregamento otimizado com múltiplos caminhos
+[33m6271dc0[m fix: Corrigido carregamento do modelo - Caminho direto para gb_optimized_model.pkl com debug melhorado
+[33mfebead6[m fix: App completamente simplificado - Removida sidebar, carregamento robusto do modelo com múltiplos caminhos e interface focada apenas em predição
+[33m0643031[m feat: App simplificado - Apenas interface de predição com layout moderno e carregamento do modelo existente
+[33m1280fdc[m[33m ([m[1;31morigin/main[m[33m)[m feat: Modelo otimizado com 80% de acurácia - 800 registros, 39 features, pronto para deploy no Streamlit Cloud
+[33m51090e6[m feat: Interface melhorada do VetDiagnosisAI - Layout moderno e interativo com gradientes, melhor organização visual e tratamento de erros robusto

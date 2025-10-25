@@ -722,3 +722,5 @@ class ChatVeterinario:
     def obter_historico(self) -> List[Dict]:
         """Retorna histórico de conversas"""
         return self.historico
+
+

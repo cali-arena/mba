@@ -265,3 +265,5 @@ with tab2:
 # Footer
 st.divider()
 st.markdown("🐾 DIAGVET IA - Sistema Veterinário")
+
+

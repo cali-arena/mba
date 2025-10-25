@@ -283,3 +283,5 @@ print("✅ DATASET REAL COMPLETO CRIADO COM SUCESSO!")
 print("=" * 70)
 print("\n🚀 Execute: streamlit run app.py")
 print("=" * 70)
+
+

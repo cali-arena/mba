@@ -443,3 +443,9 @@ def gerar_hipoteses_diagnosticas(valores_exames, sintomas, especie='Canina'):
     
     return hipoteses
 
+
+
+
+
+
+

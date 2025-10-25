@@ -38,3 +38,5 @@ EXEMPLOS_PERGUNTAS = [
     "Qual o prognóstico?",
     "Como monitorar o tratamento?"
 ]
+
+

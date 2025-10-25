@@ -344,3 +344,5 @@ O **VetDiagnosisAI** agora utiliza:
 
 *Última atualização: Outubro 2025*
 
+
+

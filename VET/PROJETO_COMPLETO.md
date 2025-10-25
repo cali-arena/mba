@@ -459,3 +459,5 @@ O projeto foi desenvolvido para fácil extensão:
 
 *Versão 1.0 - Outubro 2025*
 
+
+

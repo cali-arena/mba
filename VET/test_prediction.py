@@ -59,3 +59,5 @@ if __name__ == "__main__":
         print("\n🎉 Sistema de predição está funcionando corretamente!")
     else:
         print("\n💥 Sistema de predição tem problemas!")
+
+

@@ -55,3 +55,5 @@ if btn3:
 
 st.markdown("### Resultado:")
 st.info("Se os botões funcionarem aqui, o problema não está na lógica básica do Streamlit.")
+
+

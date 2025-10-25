@@ -201,3 +201,5 @@ Medicamentos recomendados:
 ---
 
 **🐾 Sistema de Medicamentos VetDiagnosisAI - Suporte Inteligente ao Diagnóstico Veterinário**
+
+

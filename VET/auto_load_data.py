@@ -34,3 +34,5 @@ if __name__ == "__main__":
         print(f"🏥 Diagnósticos: {len(df['diagnostico'].unique())}")
     else:
         print("❌ Dataset Master não encontrado")
+
+

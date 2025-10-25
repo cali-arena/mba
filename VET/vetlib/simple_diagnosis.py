@@ -242,3 +242,5 @@ def gerar_hipoteses_simples(sintomas: Dict, exames: Dict, especie: str) -> List[
     hipoteses.sort(key=lambda x: (prioridade_order.get(x['prioridade'], 0), x['score']), reverse=True)
     
     return hipoteses[:5]  # Top 5 hipóteses
+
+

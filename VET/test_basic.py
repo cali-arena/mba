@@ -120,3 +120,5 @@ print("=" * 60)
 print("\n🚀 Execute o aplicativo com: streamlit run app.py")
 print("=" * 60)
 
+
+
