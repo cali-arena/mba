@@ -387,45 +387,15 @@ with tab1:
             st.write(f"Exames: Hb={hemoglobina}, Ht={hematocrito}, Leu={leucocitos}, Glu={glicose}")
             st.write(f"Ureia={ureia}, Creat={creatinina}, PT={proteinas_totais}, Alb={albumina}, Eos={eosinofilos}")
             
-            # Teste: alterar alguns valores para ver se o resultado muda
-            st.write("🧪 Teste - Alterando valores para verificar se o modelo responde:")
-            
-            # Criar dados de teste com valores bem diferentes
-            dados_teste = np.array([
-                # Informações básicas (5 features) - valores diferentes
-                0, 1, 15.0, 25.0, 0,  # Felina, 15 anos, 25kg, Fêmea
-                # Exames laboratoriais principais (9 features) - valores alterados
-                8.0, 30.0, 15.0, 150.0, 50.0, 2.0, 8.0, 4.0, 5.0,
-                # Valores fixos para outros exames (10 features)
-                25.0, 50.0, 100.0, 7.0, 3.5, 200.0, 100.0, 2.0, 1.0, 1.5,
-                # Sintomas (10 features) - todos diferentes
-                1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-                # Features extras para completar 39 (5 features)
-                0, 0, 0, 0, 0
-            ]).reshape(1, -1)
-            
-            # Aplicar scaler se disponível
-            if scaler is not None:
-                dados_teste_scaled = scaler.transform(dados_teste)
-            else:
-                dados_teste_scaled = dados_teste
-            
-            # Fazer predição de teste
-            predicao_teste = modelo.predict(dados_teste_scaled)
-            probabilidades_teste = modelo.predict_proba(dados_teste_scaled)
-            
-            st.write(f"🧪 Teste - Predição: {predicao_teste}")
-            st.write(f"🧪 Teste - Probabilidades: {probabilidades_teste[0]}")
-            
-            # Versão alternativa: usar apenas valores reais do formulário
-            st.write("🔄 Versão alternativa - Apenas valores do formulário:")
-            
             # Definir sintomas_values primeiro
             sintomas = [febre, apatia, perda_peso, vomito, diarreia, tosse, letargia, feridas_cutaneas, poliuria, polidipsia]
             sintomas_values = [1 if s else 0 for s in sintomas]
             
-            # Criar array apenas com valores reais (sem valores fixos)
-            dados_reais = np.array([
+            # Criar array de dados (39 features exatas) - VERSÃO FINAL
+            st.write(f"Sintomas: {sintomas_values}")
+            
+            # Usar apenas valores reais do formulário (sem valores fixos)
+            dados_predicao = np.array([
                 # Informações básicas (5 features)
                 especie == "Canina", especie == "Felina", idade_anos, peso_kg, sexo == "M",
                 # Exames laboratoriais principais (9 features)
@@ -433,59 +403,21 @@ with tab1:
                 # Sintomas (10 features)
             ] + sintomas_values)
             
-            # Completar com zeros para ter 39 features
-            if len(dados_reais) < 39:
-                dados_reais = np.concatenate([dados_reais, np.zeros(39 - len(dados_reais))])
+            # Completar com zeros para ter exatamente 39 features
+            if len(dados_predicao) < 39:
+                dados_predicao = np.concatenate([dados_predicao, np.zeros(39 - len(dados_predicao))])
             
-            dados_reais = dados_reais.reshape(1, -1)
-            
-            # Aplicar scaler se disponível
-            if scaler is not None:
-                dados_reais_scaled = scaler.transform(dados_reais)
-            else:
-                dados_reais_scaled = dados_reais
-            
-            # Fazer predição com dados reais
-            predicao_reais = modelo.predict(dados_reais_scaled)
-            probabilidades_reais = modelo.predict_proba(dados_reais_scaled)
-            
-            st.write(f"🔄 Reais - Predição: {predicao_reais}")
-            st.write(f"🔄 Reais - Probabilidades: {probabilidades_reais[0]}")
-            
-            # Criar array de dados (39 features exatas)
-            st.write(f"Sintomas: {sintomas_values}")
-            
-            dados_predicao = np.array([
-                # Informações básicas (5 features)
-                especie == "Canina", especie == "Felina", idade_anos, peso_kg, sexo == "M",
-                # Exames laboratoriais principais (9 features)
-                hemoglobina, hematocrito, leucocitos, glicose, ureia, creatinina, proteinas_totais, albumina, eosinofilos,
-                # Valores fixos para outros exames (10 features)
-                25.0, 50.0, 100.0, 7.0, 3.5, 200.0, 100.0, 2.0, 1.0, 1.5,
-                # Sintomas (10 features)
-            ] + sintomas_values + [
-                # Features extras para completar 39 (5 features)
-                0, 0, 0, 0, 0
-            ]).reshape(1, -1)
-            
-            # Debug: mostrar array final
-            st.write(f"🔍 Array de dados ({dados_predicao.shape[1]} features): {dados_predicao[0]}")
+            dados_predicao = dados_predicao.reshape(1, -1)
             
             # Aplicar scaler se disponível
             if scaler is not None:
                 dados_predicao_scaled = scaler.transform(dados_predicao)
-                st.write(f"🔍 Dados após scaler: {dados_predicao_scaled[0]}")
             else:
                 dados_predicao_scaled = dados_predicao
-                st.write("🔍 Scaler não disponível, usando dados originais")
             
             # Fazer predição
             predicao = modelo.predict(dados_predicao_scaled)
             probabilidades = modelo.predict_proba(dados_predicao_scaled)
-            
-            # Debug: mostrar predição bruta
-            st.write(f"🔍 Predição bruta: {predicao}")
-            st.write(f"🔍 Probabilidades: {probabilidades[0]}")
             
             # Obter diagnóstico
             diagnostico_predito = le_diagnostico.inverse_transform(predicao)[0]
