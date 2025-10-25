@@ -399,30 +399,6 @@ elif analise_tipo == "Correlações":
         hide_index=True
     )
     
-    # Scatter plot de correlação selecionada
-    st.markdown("### 📈 Scatter Plot")
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        var_x = st.selectbox("Variável X:", colunas_relevantes)
-    
-    with col2:
-        var_y = st.selectbox("Variável Y:", [c for c in colunas_relevantes if c != var_x])
-    
-    # Scatter plot sem trendline para evitar erro de statsmodels
-    fig_scatter = px.scatter(
-        df,
-        x=var_x,
-        y=var_y,
-        color='diagnostico' if 'diagnostico' in df.columns else None,
-        title=f'Relação entre {var_x.replace("_", " ").title()} e {var_y.replace("_", " ").title()}',
-        opacity=0.6
-    )
-    fig_scatter.update_layout(height=500)
-    
-    st.plotly_chart(fig_scatter, use_container_width=True)
-
 # ============================================================================
 # ANÁLISE: OUTLIERS
 # ============================================================================
